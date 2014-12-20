@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<script src="/static/jquery-1.11.0.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("form").submit(function(e) {
+            var passwd1 = $("#passwd1").val();
+            var passwd2 = $("#passwd2").val();
+            if ( passwd1.length == 0 && passwd2.length == 0 ) return;
+            if ( passwd1 != passwd2 ) {
+                e.preventDefault();
+                alert("两次输入的密码不一致，请重新输入！");
+            } else if ( passwd1.length < 6 ) {
+                e.preventDefault();
+                alert("密码长度太短！");
+            }
+        })
+    })
+</script>
+<head>
+    <title>用户设置</title>
+</head>
+<body>
+    <form method="POST" action="/settings">
+        <table border="1">
+            <thead>
+                <tr>
+                    <td colspan="2" style="text-align: center"><strong>用户设置</strong></td>
+                </tr>
+            </thead>
+            <tr>
+                <td>姓名：</td>
+                <td>
+                    <input type="text" name="UserName" value="${UserInfo[0].decode('utf-8')}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>联系电话：</td>
+                <td>
+                    <input type="text" name="Tel" value="${UserInfo[1].decode('utf-8')}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>电子邮件</td>
+                <td>
+                    <input type="text" name="E-mail" value="${UserInfo[2].decode('utf-8')}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>最大文件数量</td>
+                <td>
+                    <input type="text" name="MaxFiles" value="${UserInfo[3]}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>最大可用空间(MB)</td>
+                <td>
+                    <input type="text" name="MaxSize" value="${UserInfo[4]}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>文件命名规则</td>
+                <td>
+                    <input type="text" name="NameRule" value="${UserInfo[5].decode('utf-8')}" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>默认下载器</td>
+                <td>
+                    <select name="Downloader">
+%if UserInfo[6] == "aria2":
+                        <option value="aria2" selected="selected">Aria2</option>
+%else:
+                        <option value="aria2">Aria2</option>
+%endif
+%if UserInfo[6] == "wget":
+                        <option value="wget" selected="selected">Wget</option>
+%else:
+                        <option value="wget">Wget</option>
+%endif
+%if UserInfo[6] == "python":
+                        <option value="python" selected="selected">Python默认</option>
+%else:
+                        <option value="python">Python默认</option>
+%endif
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>原密码：</td>
+                <td>
+                    <input type="password" name="OldPassWord" value="" required="required" id="oldpasswd">
+                </td>
+            </tr>
+            <tr>
+                <td>新密码：</td>
+                <td>
+                    <input type="password" name="NewPassWord" value="" id="passwd1">
+                </td>
+            </tr>
+            <tr>
+                <td>确认密码：</td>
+                <td>
+                    <input type="password" id="passwd2">
+                </td>
+            </tr>
+        </table>
+        <input type="submit" value="提交">
+    </form>
+</body>
+</html>

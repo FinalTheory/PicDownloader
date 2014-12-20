@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>系统管理</title>
+</head>
+<script src="/static/jquery-1.11.0.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#btn_config").click(function() {
+            var data = $("#config").serialize();
+            if ( confirm("确认修改设置吗？") ) {
+                $.post(
+                        '/admin',
+                        data,
+                        function(data) {
+                            alert((JSON.parse(data)).msg);
+                        }
+                )
+            } else {
+                console.log(data);
+            }
+        });
+        // 解锁修改功能
+        $(".btn_modify").click(function() {
+            var btn = $(this);
+            var btns = btn.parent().parent().find('input[type="button"]');
+            var arr = btn.parent().parent().find('input[class="dat"]');
+            for (var i = 0; i < arr.length; i++) {
+                $(arr[i]).removeAttr("readonly");
+            }
+            btn.hide();
+            $(btns[1]).show();
+        });
+        // 数据提交函数
+        function SubmitModifyData(btn, initData) {
+            var data = initData;
+            var arr = btn.parent().parent().find('input[type="text"]');
+            for (var i = 0; i < arr.length; i++) {
+                data += '&' + $(arr[i]).serialize();
+            }
+            if ( confirm("确认提交该操作吗？") ) {
+                $.post(
+                        '/admin',
+                        data,
+                        function(data) {
+                            alert((JSON.parse(data)).msg);
+                            location.reload();
+                        }
+                )
+            } else {
+                console.log(data);
+            }
+        }
+        // 提交修改的按钮
+        $(".btn_submit_modify").click(function() {
+            SubmitModifyData($(this), "action=modify");
+        });
+        // 删除对应规则的按钮
+        $(".btn_delete").click(function() {
+            SubmitModifyData($(this), "action=delete");
+        });
+        $(".btn_submit_modify").hide();
+    });
+</script>
+<body>
+
+<fieldset>
+    <legend>全局设置</legend>
+    <form id="config" method="POST" action="/admin">
+        <input type="hidden" name="action" value="config">
+        <table border="1">
+            <tr>
+                <td>网站名称</td>
+                <td>
+                    <input type="text" name="SiteName" value="${SiteName.decode('gb18030')}">
+                </td>
+            </tr>
+            <tr>
+                <td>默认下载器</td>
+                <td>
+                    <select name="Downloader">
+%if Downloader == "aria2":
+                        <option value="aria2" selected="selected">Aria2</option>
+%else:
+                        <option value="aria2">Aria2</option>
+%endif
+%if Downloader == "wget":
+                        <option value="wget" selected="selected">Wget</option>
+%else:
+                        <option value="wget">Wget</option>
+%endif
+%if Downloader == "python":
+                        <option value="python" selected="selected">Python默认</option>
+%else:
+                        <option value="python">Python默认</option>
+%endif
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>数据存储位置</td>
+                <td>
+                    <input type="text" name="GlobalPos" value="${GlobalPos.decode('gb18030')}">
+                </td>
+            </tr>
+        </table>
+        <input type="button" value="提交" id="btn_config">
+    </form>
+</fieldset>
+
+<fieldset>
+    <legend>用户管理</legend>
+    <form method="POST" action="/admin">
+        <table border="1">
+            <thead>
+                <tr>
+                    <td>学号/工号</td>
+                    <td>姓名</td>
+                    <td>密码</td>
+                    <td>文件数限额</td>
+                    <td>磁盘空间限额</td>
+                    <td>操作</td>
+                </tr>
+            </thead>
+%for user in AllUserData:
+            <tr>
+                <td>
+                    <input type="text" name="UID" value="${user[0].decode('utf-8')}" readonly="readonly">
+                </td>
+                <td>
+                    <input type="text" name="UserName" value="${user[1].decode('utf-8')}" readonly="readonly" class="dat">
+                </td>
+                <td>
+                    <input type="text" name="PassWord" value="${user[2].decode('utf-8')}" readonly="readonly" class="dat">
+                </td>
+                <td>
+                    <input type="text" name="MaxFiles" value="${user[3]}" readonly="readonly" class="dat">
+                </td>
+                <td>
+                    <input type="text" name="MaxSize" value="${user[4]}" readonly="readonly" class="dat">
+                </td>
+                <td>
+                    <input type="button" value="修改" class="btn_modify">
+                    <input type="button" value="更新" class="btn_submit_modify">
+                    <input type="button" value="删除" class="btn_delete">
+                </td>
+            </tr>
+%endfor
+        </table>
+    </form>
+</fieldset>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<script src="/static/jquery-1.11.0.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#register").click(function () {
+            window.location.href = '/register'
+        })
+    })
+</script>
+	<body>
+		<form method="POST" action="/login">
+			<label for="UID">学号/工号：</label>
+			<input type="text" name="UID" id="UID">
+			<br>
+			<label for="password">密码：</label>
+			<input type="password" name="password" id="password">
+			<input type="submit" value="登陆" id="submit" />
+            <input type="button" value="注册" id="register" />
+
+            <br>登录有效时间：
+            <input type="radio" name="expires" value="86400" checked="checked" />一天
+            <input type="radio" name="expires" value="2678400" />一月
+            <input type="radio" name="expires" value="31536000" />一年
+		</form>
+	</body>
+</html>

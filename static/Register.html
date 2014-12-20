@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<script src="/static/jquery-1.11.0.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("form").submit(function(e) {
+            var passwd1 = $("#passwd1").val();
+            var passwd2 = $("#passwd2").val();
+            if ( passwd1 != passwd2 ) {
+                e.preventDefault();
+                alert("两次输入的密码不一致，请重新输入！");
+            } else if ( passwd1.length < 6 ) {
+                e.preventDefault();
+                alert("密码长度太短！");
+            }
+        })
+    })
+</script>
+<head>
+    <title>用户注册</title>
+</head>
+<body>
+    <form method="POST" action="/register">
+        <table border="1">
+            <thead>
+                <tr>
+                    <td colspan="2" style="text-align: center">新用户注册</td>
+                </tr>
+            </thead>
+            <tr>
+                <td>学号/工号：</td>
+                <td>
+                    <input type="text" name="UID" value="" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>密码：</td>
+                <td>
+                    <input type="password" name="PassWord" value="" id="passwd1" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>确认密码：</td>
+                <td>
+                    <input type="password" id="passwd2" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>姓名：</td>
+                <td>
+                    <input type="text" name="UserName" value="" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>联系电话：</td>
+                <td>
+                    <input type="text" name="Tel" value="" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>电子邮件</td>
+                <td>
+                    <input type="text" name="E-mail" value="" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>最大文件数量</td>
+                <td>
+                    <input type="text" name="MaxFiles" value="" required="required">
+                </td>
+            </tr>
+            <tr>
+                <td>最大可用空间(MB)</td>
+                <td>
+                    <input type="text" name="MaxSize" value="" required="required">
+                </td>
+            </tr>
+        </table>
+        <input type="submit" value="注册">
+    </form>
+</body>
+</html>

@@ -16,7 +16,10 @@ CREATE TABLE `CurrentTask` (
 	`Location`	TEXT NOT NULL,
 	`StartTime`	TEXT NOT NULL,
 	`FinishTime`	TEXT NOT NULL,
-	PRIMARY KEY(UID)
+	`TaskID`	INTEGER NOT NULL,
+	`TimeZone`	TEXT NOT NULL,
+	`RepeatTimes`	INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY(TaskID)
 );
 
 CREATE TABLE `Users` (

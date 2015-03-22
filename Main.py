@@ -2,30 +2,22 @@
 
 __author__ = 'FinalTheory'
 
-import web
+
 import json
-# web.config.debug = False
-import sys
+
+import os
 import sha
-import time
-import sqlite3
-import threading
-import subprocess
+from dateutil import parser
 from random import random
-from ConfigParser import ConfigParser
-from tkMessageBox import showerror
 from mako.template import Template
 from tempfile import gettempdir, TemporaryFile
-import Tkinter as tk
+from time import time
+from datetime import datetime, timedelta
+from pytz import timezone
+from ThreadPool import *
+from GlobalDefs import *
 
-cfg_name = 'config.ini'
-
-
-class GlobalDef():
-    USER_STATUS_ADMIN = 0
-    USER_STATUS_NORMAL = 1
-    USER_STATUS_FORBIDDEN = 2
-    USER_STATUS_NOT_LOGGED = -1
+from Tools import *
 
 # 页面映射
 urls = (
@@ -45,82 +37,6 @@ urls = (
     # 管理员功能
     '/admin', 'Admin',
 )
-
-
-class ConfigLoader():
-    def __init__(self):
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            open(cfg_name, 'r').close()
-        except:
-            showerror(u'严重错误', u'无法读取配置文件！程序自动退出。')
-            exit(-1)
-        self.config = ConfigParser()
-        self.config.read(cfg_name)
-        self.system = dict(self.config.items('system'))
-
-    def read(self, key):
-        return self.system[key]
-
-    def write(self, key, value):
-        self.system[key] = value
-        self.config.set('system', key, value)
-        self.config.write(open(cfg_name, "w"))
-
-
-class DataBaseManager():
-
-    def __init__(self):
-        # Try to open database file, if failed then create a new one
-        try:
-            open(cfg.read('db_filename'), 'r').close()
-        except:
-            self.InitDataBase()
-            sys.stderr.write('Warning: database not found, created a new one!\n')
-
-    # Method to create a entire new database
-    def InitDataBase(self):
-        open(cfg.read('db_filename'), 'w').close()
-        with open(cfg.read('sql_filename')) as fid,\
-            sqlite3.connect(cfg.read('db_filename')) as conn:
-            conn.text_factory = str
-            for sql in fid.read().split('\n\n'):
-                if len(sql) > 3:
-                    conn.execute(sql)
-                    conn.commit()
-
-    def Execute(self, sql):
-        # connect to the database
-        with sqlite3.connect(cfg.read('db_filename')) as conn:
-            conn.text_factory = str
-            conn.execute(sql)
-            conn.commit()
-
-    def Query(self, sql):
-        with sqlite3.connect(cfg.read('db_filename')) as conn:
-            conn.text_factory = str
-            cursor = conn.execute(sql)
-            return cursor.fetchall()
-
-    def QueryFirst(self, sql):
-        with sqlite3.connect(cfg.read('db_filename')) as conn:
-            conn.text_factory = str
-            cursor = conn.execute(sql)
-            return cursor.fetchone()
-
-
-# In debug mode, web.py will load global variable twice,
-# so we have to use this trick to avoid this.
-if web.config.get('_db') is None:
-    cfg = ConfigLoader()
-    db = DataBaseManager()
-    web.config._cfg = cfg
-    web.config._db = db
-else:
-    cfg = web.config._cfg
-    db = web.config._db
-
 
 def CreateMyTemplate(filename):
         return Template(
@@ -151,9 +67,9 @@ def CheckLogin():
             'MaxFiles': result[6]
         }
         UserStatus = result[1]
-        if UserStatus == GlobalDef.USER_STATUS_ADMIN or UserStatus == GlobalDef.USER_STATUS_NORMAL:
+        if UserStatus == USER_STATUS_ADMIN or UserStatus == USER_STATUS_NORMAL:
             return True, UserInfo
-        elif UserStatus == GlobalDef.USER_STATUS_FORBIDDEN:
+        elif UserStatus == USER_STATUS_FORBIDDEN:
             return True, UserInfo
         else:
             return False, {}
@@ -243,7 +159,7 @@ class ModifyRules():
     def GET(self):
         stat, UserInfo = CheckLogin()
         if stat:
-            if UserInfo['UserStatus'] == GlobalDef.USER_STATUS_FORBIDDEN:
+            if UserInfo['UserStatus'] == USER_STATUS_FORBIDDEN:
                 return Notice(u'无效访问',  u'被封禁用户无权操作！', '/login')
             MyTemplate = CreateMyTemplate('ModifyRules.html')
             sql = "SELECT Rule_Name, URL_Rule, Status, RepeatType, RepeatValue, TaskID, TimeZone " \
@@ -256,7 +172,7 @@ class ModifyRules():
     def POST(self):
         stat, UserInfo = CheckLogin()
         if stat:
-            if UserInfo['UserStatus'] == GlobalDef.USER_STATUS_FORBIDDEN:
+            if UserInfo['UserStatus'] == USER_STATUS_FORBIDDEN:
                 return json.dumps({
                     'status': 401,
                     'msg': u'被封禁用户无权操作！'
@@ -314,11 +230,11 @@ class ModifyRules():
                         'once': 4
                     }
                     dic2val = {
-                        'day': 0,
+                        'day': REP_PER_DAY,
                         'week': int(data['Weekday']),
-                        'month': 8,
-                        'year': 9,
-                        'once': 10
+                        'month': REP_PER_MONTH,
+                        'year': REP_PER_YEAR,
+                        'once': REP_PER_ONCE
                     }
                     idx = dic2idx[RepeatType]
                     RepeatLevel = dic2val[RepeatType]
@@ -399,7 +315,7 @@ class Settings():
 class Admin():
     def GET(self):
         stat, UserInfo = CheckLogin()
-        if stat and UserInfo['UserStatus'] == GlobalDef.USER_STATUS_ADMIN:
+        if stat and UserInfo['UserStatus'] == USER_STATUS_ADMIN:
             MyTemplate = CreateMyTemplate('Admin.html')
 
             sql = "SELECT UID, UserName, PassWord, MaxFiles, MaxSize FROM Users"
@@ -415,7 +331,7 @@ class Admin():
 
     def POST(self):
         stat, UserInfo = CheckLogin()
-        if stat and UserInfo['UserStatus'] == GlobalDef.USER_STATUS_ADMIN:
+        if stat and UserInfo['UserStatus'] == USER_STATUS_ADMIN:
             data = web.input()
             action = data.get('action')
             if action == 'modify':
@@ -484,6 +400,164 @@ class Admin():
                 'msg': u'非管理员无权操作！'
             })
 
+
+class MainServer():
+    def __init__(self):
+        self.prev_day = {}
+        self.thread_pool = ThreadPool(
+            int(cfg.read('max_threads')),
+            int(cfg.read('max_buf')),
+            cfg.read('downloader'),
+            cfg.read('check_if_success'),
+            int(cfg.read('size_if_success'))
+        )
+        # 启动所有线程
+        self.thread_pool.start()
+
+    # 这个方法对于每个任务，判断是否进入了新的一天
+    # 如果是的话，就将新的任务增加到任务列表中
+    def update_calendar(self, overwrite_time=None):
+        sql = "SELECT * FROM `UserTask` WHERE `Status` != 0"
+        all_tasks = db.Query(sql)
+        for task in all_tasks:
+            # 首先读取时区信息，并转换为当前任务的所在时区
+            TimeZone = timezone(str(task[6]))
+            if overwrite_time is None:
+                today = TimeZone.localize(datetime.now())
+            else:
+                today = overwrite_time
+
+            # 然后判断在该时区是否进入了新的一天
+            is_new_day = False
+            if self.prev_day.get(TimeZone, None) is None \
+                    or today.day != self.prev_day[TimeZone]:
+                self.prev_day[TimeZone] = today.day
+                is_new_day = True
+
+            # 如果确实进入了新的一天
+            if is_new_day:
+                # 首先生成任务开始和结束时间
+                # 同样注意转换为任务所在的时区
+                date_nums = map(int, task[5].split())
+                StartTime = TimeZone.localize(datetime(year=today.year,
+                                         month=today.month,
+                                         day=today.day,
+                                         hour=date_nums[3],
+                                         minute=date_nums[4]))
+                FinishTime = StartTime + timedelta(hours=int(cfg.read('task_time')))
+
+                 # 生成一些与日期相关的数据
+                yesterday = today + timedelta(days=-1)
+                tomorrow = today + timedelta(days=1)
+                keywords = {
+                    '%year%': today.year,
+                    '%mon%': today.month,
+                    '%day%': today.day,
+                    '%prev_year%': yesterday.year,
+                    '%prev_mon%': yesterday.month,
+                    '%prev_day%': yesterday.day,
+                    '%next_year%': tomorrow.year,
+                    '%next_mon%': tomorrow.month,
+                    '%next_day%': tomorrow.day
+                }
+                for key in keywords.keys():
+                        keywords[key] = '%02d' % keywords[key]
+
+                # 其次生成下载链接
+                # 用dict中的关键字不断替换URL中字符串
+                TaskID = task[0]
+                UID = task[1]
+                URL = task[2]
+                for key in keywords.keys():
+                    while URL.find(key) != -1:
+                        URL = URL.replace(key, keywords[key])
+                # 生成URL后，更新文件保存位置
+                Location = cfg.read('global_pos')
+                if cfg.read('name_rule') == 'url':
+                    Location = os.path.join(Location, URL.split('/')[-1])
+                else:
+                    Location = os.path.join(Location, task[3] + URL.split('.')[-1])
+
+                sql = "INSERT INTO `CurrentTask` VALUES ('%s', '%s', 1, '%s', '%s', '%s', %d, '%s', 0)" % (
+                        UID, URL, Location, StartTime.ctime(), FinishTime.ctime(), TaskID, TimeZone.zone)
+
+                RepeatType = int(task[4])
+                if RepeatType == REP_PER_DAY:
+                    # 如果是每天执行的任务，直接添加到任务列表
+                    db.Execute(sql)
+                elif REP_PER_MON <= RepeatType <= REP_PER_SUN:
+                    # 如果是周任务，则当前weekday必须匹配
+                    if today.isoweekday() == RepeatType:
+                        db.Execute(sql)
+                elif RepeatType == REP_PER_MONTH:
+                    # 如果是月任务，日期必须匹配
+                    if today.day == date_nums[2]:
+                        db.Execute(sql)
+                elif RepeatType == REP_PER_YEAR:
+                    # 如果是年任务，月日必须匹配
+                    if today.month == date_nums[1] and today.day == date_nums[2]:
+                        db.Execute(sql)
+                elif RepeatType == REP_PER_ONCE:
+                    # 对于仅执行一次的任务，年月日必须匹配
+                    # 并且放入任务列表中后就暂停掉这项任务
+                    if today.year == date_nums[0] and today.month == date_nums[1] and today.day == date_nums[2]:
+                        db.Execute(sql)
+                        db.Execute("UPDATE `UserTask` SET `Status` = 0 WHERE `TaskID` = %d" % TaskID)
+
+    # 这个方法定时检查任务列表
+    # 将过期的任务从任务列表中删除
+    # 将未过期的任务添加到下载线程池
+    # 任务被重试的次数越多，则下载优先级越低
+    def update_worker(self, overwrite_time=None):
+        # 首先选择所有任务列表中未暂停的任务
+        sql = "SELECT * FROM `CurrentTask` WHERE `Status` != 0 ORDER BY `RepeatTimes` ASC"
+        all_task = db.Query(sql)
+        # 对于每一项任务进行处理，加入缓冲区
+        for task in all_task:
+            # 利用任务的时区信息，实例化两个时间戳
+            TimeZone = timezone(task[7])
+            if overwrite_time is None:
+                Now = TimeZone.localize(datetime.now())
+            else:
+                Now = overwrite_time
+            StartTime = TimeZone.localize(parser.parse(task[4]))
+            FinishTime = TimeZone.localize(parser.parse(task[5]))
+            TaskID = task[6]
+            if Now > FinishTime:
+                # 如果任务已经超时，直接删除
+                sql = "DELETE FROM `CurrentTask` WHERE `TaskID` = %d" % TaskID
+                db.Execute(sql)
+            elif Now < StartTime:
+                # 如果该任务尚未开始，就继续处理下一项任务
+                continue
+            else:
+                # 如果这项任务应该被执行，就将其放入缓冲区
+                data = {
+                    'TaskID': TaskID,
+                    'URL': task[1],
+                    'Location': task[3]
+                }
+                self.thread_pool.insert(data)
+
+    # “生产者”函数的守护线程
+    def worker_daemon(self):
+        while True:
+            sleep(int(cfg.read('worker_checking_interval')))
+            self.update_worker()
+
+    # 维护任务列表的方法的守护线程
+    def calendar_daemon(self):
+        while True:
+            self.update_calendar()
+            sleep(int(cfg.read('date_checking_interval')))
+
+
 if __name__ == '__main__':
+    server = MainServer()
     app = web.application(urls, globals())
-    web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", 80))
+    # 首先启动日历线程更新任务列表
+    start_new_thread(server.calendar_daemon, ())
+    # 然后才启动生产者线程
+    start_new_thread(server.worker_daemon, ())
+    # 最后启动http服务监听端口
+    web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", int(cfg.read('port_name'))))

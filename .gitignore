@@ -104,4 +104,7 @@ $RECYCLE.BIN/
 *.db
 *.png
 
+*.txt
 jquery*.*
+aria2*
+wget*

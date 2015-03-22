@@ -2,18 +2,19 @@
 # 在本文件中定义了线程池以及相关类型
 __author__ = 'FinalTheory'
 
-from threading import Thread, Semaphore, Lock
+import os
+import imghdr
+from threading import Semaphore, Lock
 from thread import start_new_thread
 from Tools import db
 from subprocess import call
 from collections import deque
 from time import sleep
 from urllib import urlretrieve
-import imghdr
-import os
+
 
 class BasicDownloader:
-    def __init__(self, URL, Location, TaskID, check_type, check_size, is_debug=False):
+    def __init__(self, URL, Location, TaskID, check_type, check_size, is_debug):
         self.download(URL, Location, is_debug)
         status = self.check_if_success(Location, check_type, check_size)
         if status:
@@ -46,29 +47,32 @@ class BasicDownloader:
             else:
                 return False
 
+
 class Aria2Downloader(BasicDownloader):
     def download(self, URL, Location, is_debug):
         cmd = ['aria2.exe', URL,
                '--out=', Location,
                '--max-connection-per-server', '3']
         if is_debug:
-            return ' '.join(cmd) + '\n'
+            return ' '.join(cmd)
         else:
             call(cmd)
+
 
 class WgetDownloader(BasicDownloader):
     def download(self, URL, Location, is_debug):
         cmd = ['wget.exe', URL,
                '--output-document=', Location]
         if is_debug:
-            return ' '.join(cmd) + '\n'
+            return ' '.join(cmd)
         else:
             call(cmd)
+
 
 class PythonDownloader(BasicDownloader):
     def download(self, URL, Location, is_debug):
         if is_debug:
-            return 'urlretrieve {} to {}\n'.format(URL, Location)
+            return 'urlretrieve {} to {}'.format(URL, Location)
         else:
             urlretrieve(URL, Location)
 
@@ -79,7 +83,8 @@ class ThreadPool:
                  max_buf=4096,
                  downloader='python',
                  check_type='auto',
-                 check_size=4096):
+                 check_size=4096,
+                 is_debug=False):
         # 定义锁以及相关变量
         self.max_threads = max_threads
         self.working_queue = deque()
@@ -88,6 +93,7 @@ class ThreadPool:
         self.downloader = downloader
         self.check_type = check_type
         self.check_size = check_size
+        self.is_debug = is_debug
         # 最后是三个信号量
         self.slots = Semaphore(max_buf)
         self.items = Semaphore(0)
@@ -100,11 +106,26 @@ class ThreadPool:
             data = self.remove()
             # 从缓冲区中抓取任务并执行下载
             if self.downloader == 'python':
-                PythonDownloader(data['URL'], data['Location'], data['TaskID'], self.check_type, self.check_size)
+                PythonDownloader(data['URL'],
+                                 data['Location'],
+                                 data['TaskID'],
+                                 self.check_type,
+                                 self.check_size,
+                                 self.is_debug)
             elif self.downloader == 'wget':
-                WgetDownloader(data['URL'], data['Location'], data['TaskID'], self.check_type, self.check_size)
+                WgetDownloader(data['URL'],
+                                 data['Location'],
+                                 data['TaskID'],
+                                 self.check_type,
+                                 self.check_size,
+                                 self.is_debug)
             elif self.downloader == 'aria2':
-                Aria2Downloader(data['URL'], data['Location'], data['TaskID'], self.check_type, self.check_size)
+                Aria2Downloader(data['URL'],
+                                 data['Location'],
+                                 data['TaskID'],
+                                 self.check_type,
+                                 self.check_size,
+                                 self.is_debug)
             self.thread_locks[my_idx].release()
 
     # 下面两个方法用于暂停和恢复所有下载线程

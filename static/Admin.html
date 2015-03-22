@@ -13,7 +13,12 @@
                         '/admin',
                         data,
                         function(data) {
-                            alert((JSON.parse(data)).msg);
+                            var js_data = JSON.parse(data);
+                            alert(js_data.msg);
+                            if ( js_data.status != 200 ) {
+                                // 如果操作不成功，自动刷新页面
+                                location.reload();
+                            }
                         }
                 )
             } else {
@@ -70,6 +75,9 @@
         <input type="hidden" name="action" value="config">
         <table border="1">
             <tr>
+                <td colspan="2"><center><strong>常用设置</strong></center></td>
+            </tr>
+            <tr>
                 <td>网站名称</td>
                 <td>
                     <input type="text" name="SiteName" value="${SiteName.decode('gb18030')}">
@@ -102,6 +110,73 @@
                 <td>
                     <input type="text" name="GlobalPos" value="${GlobalPos.decode('gb18030')}">
                 </td>
+            </tr>
+            <tr>
+                <td>任务持续时间 (hour)</td>
+                <td>
+                    <input type="text" name="TaskTime" value="${TaskTime}">
+                </td>
+            </tr>
+            <tr>
+                <td>文件命名规则</td>
+                <td>
+                    <select name="NameRule">
+%if NameRule == "url":
+                        <option value="url" selected="selected">基于URL</option>
+%else:
+                        <option value="rule">基于规则名称</option>
+%endif
+%if NameRule == "rule":
+                        <option value="url" selected="selected">基于URL</option>
+%else:
+                        <option value="rule">基于规则名称</option>
+%endif
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2"><center><strong>以下是高级设置选项</strong></center></td>
+            </tr>
+            <tr>
+                <td>监听端口 (重启后生效)</td>
+                <td><input type="text" name="PortName" value="${PortName}"></td>
+            </tr>
+            <tr>
+                <td>日期变动检测间隔 (s)</td>
+                <td><input type="text" name="DateCheckingInterval" value="${DateCheckingInterval}"></td>
+            </tr>
+            <tr>
+                <td>下载任务增加间隔 (s)</td>
+                <td><input type="text" name="WorkerCheckingInterval" value="${WorkerCheckingInterval}"></td>
+            </tr>
+            <tr>
+                <td>任务检测方式</td>
+                <td>
+                    <select name="CheckIfSuccess">
+%if CheckIfSuccess == "auto":
+                        <option value="auto" selected="selected">根据文件头</option>
+%else:
+                        <option value="size">根据文件大小</option>
+%endif
+%if CheckIfSuccess == "size":
+                        <option value="auto" selected="selected">根据文件头</option>
+%else:
+                        <option value="size">根据文件大小</option>
+%endif
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>有效文件大小 (Bytes)</td>
+                <td><input type="text" name="SizeIfSuccess" value="${SizeIfSuccess}"></td>
+            </tr>
+            <tr>
+                <td>下载线程数</td>
+                <td><input type="text" name="MaxThreads" value="${MaxThreads}"></td>
+            </tr>
+            <tr>
+                <td>下载缓冲区容量</td>
+                <td><input type="text" name="MaxBuf" value="${MaxBuf}"></td>
             </tr>
         </table>
         <input type="button" value="提交" id="btn_config">

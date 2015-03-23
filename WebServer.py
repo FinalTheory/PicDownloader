@@ -9,7 +9,8 @@ import os
 from random import random
 from mako.template import Template
 from time import time
-from Tools import cfg, db
+from Tools import cfg, db, check_path
+from shutil import rmtree
 from GlobalDefs import *
 
 
@@ -22,14 +23,16 @@ urls = (
     '/login', 'Login',
     '/logout', 'Logout',
     '/register', 'Register',
-    # 管理任务规则
+    # 管理URL规则
     '/modify_rules', 'ModifyRules',
-    # 管理当前下载任务
+    # 管理当前任务
     '/modify_tasks', 'ModifyTasks',
     # 用户设置
     '/settings', 'Settings',
     # 管理员功能
     '/admin', 'Admin',
+    # 日志显示功能
+    '/log', 'Log',
 )
 
 def CreateMyTemplate(filename):
@@ -129,6 +132,10 @@ class Register():
     def POST(self):
         data = web.input()
         UID = data.get('UID').encode('utf-8')
+        # 首先检查UID是否合法
+        if not UID.isalnum():
+            return Notice(u'注册失败', u'用户ID必须由字母和数字构成！', '/register')
+        # 其次检查UID是否重复
         result = db.QueryFirst("SELECT * FROM Users WHERE UID='%s'" % UID)
         if result:
             return Notice(u'注册失败', u'重复的学号/工号！', '/register')
@@ -143,10 +150,15 @@ class Register():
                   "`UserName`,`PassWord`,`Tel`,`E-mail`,`MaxSize`,`MaxFiles`,`Downloader`) " \
                   "VALUES ('%s',NULL,1,'%s','%s','%s','%s',%d,%d,'%s');" \
                   % (UID, UserName, PassWord, Tel, E_mail, MaxSize, MaxFiles, cfg.read('downloader'))
+            # 尝试为用户创建家目录
+            user_path = os.path.join(cfg.read('global_pos'), UID)
+            if not os.path.exists(user_path):
+                os.mkdir(user_path)
+            # 如果家目录创建成功，才更新数据库
             db.Execute(sql)
             return Notice(u'注册成功', u'请使用你新注册的帐号登录系统。', '/login')
-        except:
-            return Notice(u'注册失败', u'未知错误，请检查你的注册信息是否合法有效！', '/register')
+        except Exception, err:
+            return Notice(u'注册失败', u'错误: %s 请检查你的注册信息是否合法有效！' % err, '/register')
 
 
 class ModifyRules():
@@ -194,7 +206,17 @@ class ModifyRules():
                     })
             elif action == 'delete':
                 try:
-                    sql = "DELETE FROM UserTask WHERE TaskID=%d" % TaskID
+                    # 注意要删除任务对应文件夹：
+                    sql = "SELECT `UID`, `SubDirectory` FROM `UserTask` WHERE `TaskID` = %d" % TaskID
+                    Dirs = db.QueryFirst(sql)
+                    del_path = os.path.join(cfg.read('global_pos'),
+                                            Dirs[0].decode('utf-8'),
+                                            Dirs[1].decode('utf-8'))
+                    if Dirs[1] and os.path.exists(del_path):
+                        rmtree(del_path)
+                    sql = "DELETE FROM `UserTask` WHERE `TaskID`=%d" % TaskID
+                    db.Execute(sql)
+                    sql = "DELETE FROM `CurrentTask` WHERE `TaskID`=%d" % TaskID
                     db.Execute(sql)
                     return json.dumps({
                         'status': 200,
@@ -234,20 +256,33 @@ class ModifyRules():
                     RepeatLevel = dic2val[RepeatType]
                     RepeatValue = ' '.join(map(str, map(int, [lst_year[idx], lst_month[idx],
                                                               lst_day[idx], lst_hour[idx], lst_minute[idx]])))
+                    SubDir = data.get('Sub_Dir', '')
+                    NameRule = data.get('NameRule', 'auto').encode('utf-8')
+                    Downloader = data.get('Downloader', 'aria2').encode('utf-8')
+                    CheckType = data.get('CheckType', 'auto').encode('utf-8')
+                    TaskTime = int(data.get('TaskTime', '12'))
+                    CheckSize = int(data.get('CheckSize', '4096'))
                     sql = "INSERT INTO UserTask (UID, URL_Rule, Rule_Name, RepeatType, RepeatValue, " \
-                          "TimeZone, Status) VALUES ('%s', '%s', '%s', %d, '%s', '%s', %d)" % \
-                          (UID, URL_Rule, Rule_Name, RepeatLevel, RepeatValue, TimeZone, Status)
+                          "TimeZone, Status, SubDirectory, NameRule, TaskTime, Downloader, CheckType, CheckSize) " \
+                          "VALUES ('%s', '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d)" % \
+                          (UID, URL_Rule, Rule_Name, RepeatLevel, RepeatValue, TimeZone, Status,
+                           SubDir.encode('utf-8'), NameRule, TaskTime, Downloader, CheckType, CheckSize)
                     if len(URL_Rule) == 0 or len(Rule_Name) == 0:
                         raise Exception(u'请输入有效的下载链接和任务名称')
+                    # 为任务建立子目录
+                    # 注意路径必须是unicode编码的！
+                    Rule_Folder = os.path.join(cfg.read('global_pos'), UID, SubDir)
+                    if not os.path.exists(Rule_Folder):
+                        os.mkdir(Rule_Folder)
                     db.Execute(sql)
                     return json.dumps({
                         'status': 200,
                         'msg': u'操作成功！'
                     })
-                except Exception, e:
+                except Exception, err:
                     return json.dumps({
                         'status': 400,
-                        'msg': u'意外错误：%s。请检查你的输入数据。' % e
+                        'msg': u'意外错误：%s。请检查你的输入数据。' % err
                     })
             else:
                 return json.dumps({
@@ -316,16 +351,12 @@ class Admin():
             AllUserData = db.Query(sql)
             return MyTemplate.render(
                 AllUserData=AllUserData,
-                Downloader=cfg.read('downloader'),
                 SiteName=cfg.read('site_name'),
                 GlobalPos=cfg.read('global_pos'),
-                TaskTime=cfg.read('task_time'),
-                NameRule=cfg.read('name_rule'),
                 DateCheckingInterval=cfg.read('date_checking_interval'),
                 WorkerCheckingInterval=cfg.read('worker_checking_interval'),
+                CleanerCheckingInterval=cfg.read('cleaner_checking_interval'),
                 PortName=cfg.read('port_name'),
-                CheckIfSuccess=cfg.read('check_if_success'),
-                SizeIfSuccess=cfg.read('size_if_success'),
                 MaxThreads=cfg.read('max_threads'),
                 MaxBuf=cfg.read('max_buf'),
             )
@@ -337,6 +368,7 @@ class Admin():
         if stat and UserInfo['UserStatus'] == USER_STATUS_ADMIN:
             data = web.input()
             action = data.get('action')
+            # TODO: 增加一个停止/启动所有线程的功能
             if action == 'modify':
                 try:
                     UID = data.get('UID').encode('utf-8')
@@ -361,10 +393,16 @@ class Admin():
                     UID = data.get('UID').encode('utf-8')
                     if UID == 'root':
                         raise Exception(u'不允许删除管理员！')
-                    sql = "DELETE FROM Users WHERE UID='%s'" % UID
+                    sql = "DELETE FROM `Users` WHERE `UID`='%s'" % UID
                     db.Execute(sql)
-                    sql = "DELETE FROM UserTask WHERE UID='%s'" % UID
+                    sql = "DELETE FROM `UserTask` WHERE `UID`='%s'" % UID
                     db.Execute(sql)
+                    sql = "DELETE FROM `CurrentTask` WHERE `UID`='%s'" % UID
+                    db.Execute(sql)
+                    # 最后注意删除用户的目录
+                    del_path = os.path.join(cfg.read('global_pos'), UID)
+                    if os.path.exists(del_path):
+                        rmtree(del_path)
                     return json.dumps({
                         'status': 200,
                         'msg': u'操作成功！'
@@ -377,9 +415,7 @@ class Admin():
             elif action == 'config':
                 try:
                     # 上面先定义一些检查输入数据是否合法的函数
-                    def check_path(path):
-                        if not os.path.exists(path) or os.path.isfile(path):
-                            raise Exception(u'设定的下载路径不存在！')
+
                     # TODO: 这里可以为更多设置项增加检查函数，似乎这就是单子的一种用法吧？
                     CheckFunc = {
                         'Downloader': None,
@@ -440,6 +476,33 @@ class Admin():
                 'status': 401,
                 'msg': u'非管理员无权操作！'
             })
+
+
+class ModifyTasks():
+    def GET(self):
+        stat, UserInfo = CheckLogin()
+        if stat:
+            if UserInfo['UserStatus'] == USER_STATUS_FORBIDDEN:
+                return Notice(u'无效访问',  u'被封禁用户无权操作！', '/login')
+            MyTemplate = CreateMyTemplate('ModifyTasks.html')
+            sql = "SELECT * FROM `CurrentTask` WHERE `UID` = '%s'" % UserInfo['UID']
+            results = db.Query(sql)
+            return MyTemplate.render(CurrentTask=results)
+        else:
+            return Notice(u'无效访问',  u'请先登录！', '/login')
+
+    def POST(self):
+        pass
+
+class Log():
+    def GET(self):
+        stat, UserInfo = CheckLogin()
+        if stat:
+            if UserInfo['UserStatus'] != USER_STATUS_ADMIN:
+                return Notice(u'无效访问',  u'普通用户无权操作！', '/login')
+            return open(cfg.read('log_filename'), 'r').read().encode('utf-8')
+        else:
+            return Notice(u'无效访问',  u'请先登录！', '/login')
 
 
 def start_web_server():

@@ -17,6 +17,7 @@
             $("#per_year").hide();
             $("#only_once").hide();
             $(".btn_submit_modify").hide();
+            $(".InputFileSize").hide();
         }
         $( "#dialog" ).dialog({
             modal: true,
@@ -81,6 +82,13 @@
             HideAll();
             $("#only_once").show();
         });
+        $("#CheckType").click(function() {
+            if (document.getElementById("ByFileSize").selected) {
+                $(".InputFileSize").show();
+            } else {
+                $(".InputFileSize").hide();
+            }
+        });
         // 解锁修改功能
         $(".btn_modify").click(function() {
             var btn = $(this);
@@ -134,8 +142,12 @@
                 <td><input type="text" name="Rule_Name" value="" /></td>
             </tr>
             <tr>
+                <td>保存位置</td>
+                <td><input type="text" name="Sub_Dir" value="" />（子目录位置）</td>
+            </tr>
+            <tr>
                 <td>规则链接</td>
-                <td><input type="text" name="URL_Rule" value="" size="55" /></td>
+                <td><input type="text" name="URL_Rule" value="" size="60" /></td>
             </tr>
             <tr>
                 <td>定时执行</td>
@@ -204,20 +216,49 @@
                 </td>
             </tr>
             <tr>
-                <td>高级设置</td>
+                <td rowspan="3">高级设置</td>
                 <td>
-                  &nbsp;
-                  <strong>当前状态：</strong>
-                  <input type="radio" name="Status" value="1" checked="checked" />启用
-                  <input type="radio" name="Status" value="0" />停用
-                  &nbsp;
-                  <strong>时区设置：</strong>
-                  <select name="TimeZone">
+                    &nbsp;
+                    <strong>当前任务状态：</strong>
+                    <input type="radio" name="Status" value="1" checked="checked" />启用
+                    <input type="radio" name="Status" value="0" />停用
+                    &nbsp;
+                    <strong>时区设置：</strong>
+                    <select name="TimeZone">
                       <option value="UTC">UTC标准时</option>
                       <option value="Asia/Shanghai">上海时间</option>
                       <option value="America/New_York">纽约时间</option>
-                  </select>
+                    </select><br>
+                    &nbsp;
+                    <strong>文件命名规则：</strong>
+                    <select name="NameRule">
+                      <option value="auto" selected="selected">根据下载链接</option>
+                      <option value="rule">根据规则名称</option>
+                    </select><br>
+                    &nbsp;
+                    <strong>默认下载工具：</strong>
+                    <select name="Downloader">
+                        <option value="aria2" selected="selected">Aria2下载器</option>
+                        <option value="wget">Wget下载器</option>
+                        <option value="python">Python下载器</option>
+                    </select>
+                    &nbsp;
+                    <strong>持续时间：</strong>
+                    <input type="text" size="4" name="TaskTime" value="12">小时
+                    <br>
+                    &nbsp;
+                    <strong>检测完成方式：</strong>
+                    <select name="CheckType" id="CheckType">
+                        <option value="auto" selected="selected">自动检测图片</option>
+                        <option value="size" id="ByFileSize">根据文件大小</option>
+                        <option value="none">完成后不检查</option>
+                    </select>
+                    &nbsp;
+                    <strong class="InputFileSize">最小体积：</strong>
+                    <input type="text" size="4" name="CheckSize" value="4096" class="InputFileSize">
+                    <strong class="InputFileSize">Bytes</strong>
                 </td>
+
             </tr>
         </table>
     </form>

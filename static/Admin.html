@@ -83,55 +83,11 @@
                     <input type="text" name="SiteName" value="${SiteName.decode('gb18030')}">
                 </td>
             </tr>
-            <tr>
-                <td>默认下载器</td>
-                <td>
-                    <select name="Downloader">
-%if Downloader == "aria2":
-                        <option value="aria2" selected="selected">Aria2</option>
-%else:
-                        <option value="aria2">Aria2</option>
-%endif
-%if Downloader == "wget":
-                        <option value="wget" selected="selected">Wget</option>
-%else:
-                        <option value="wget">Wget</option>
-%endif
-%if Downloader == "python":
-                        <option value="python" selected="selected">Python默认</option>
-%else:
-                        <option value="python">Python默认</option>
-%endif
-                    </select>
-                </td>
-            </tr>
+
             <tr>
                 <td>数据存储位置</td>
                 <td>
                     <input type="text" name="GlobalPos" value="${GlobalPos.decode('gb18030')}">
-                </td>
-            </tr>
-            <tr>
-                <td>任务持续时间 (hour)</td>
-                <td>
-                    <input type="text" name="TaskTime" value="${TaskTime}">
-                </td>
-            </tr>
-            <tr>
-                <td>文件命名规则</td>
-                <td>
-                    <select name="NameRule">
-%if NameRule == "url":
-                        <option value="url" selected="selected">基于URL</option>
-%else:
-                        <option value="rule">基于规则名称</option>
-%endif
-%if NameRule == "rule":
-                        <option value="url" selected="selected">基于URL</option>
-%else:
-                        <option value="rule">基于规则名称</option>
-%endif
-                    </select>
                 </td>
             </tr>
             <tr>
@@ -150,25 +106,8 @@
                 <td><input type="text" name="WorkerCheckingInterval" value="${WorkerCheckingInterval}"></td>
             </tr>
             <tr>
-                <td>任务检测方式</td>
-                <td>
-                    <select name="CheckIfSuccess">
-%if CheckIfSuccess == "auto":
-                        <option value="auto" selected="selected">根据文件头</option>
-%else:
-                        <option value="size">根据文件大小</option>
-%endif
-%if CheckIfSuccess == "size":
-                        <option value="auto" selected="selected">根据文件头</option>
-%else:
-                        <option value="size">根据文件大小</option>
-%endif
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>有效文件大小 (Bytes)</td>
-                <td><input type="text" name="SizeIfSuccess" value="${SizeIfSuccess}"></td>
+                <td>磁盘配额检测间隔 (s)</td>
+                <td><input type="text" name="CleanerCheckingInterval" value="${CleanerCheckingInterval}"></td>
             </tr>
             <tr>
                 <td>下载线程数</td>

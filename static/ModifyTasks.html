@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>任务管理</title>
+</head>
+<body>
+<table border="1">
+    <thead>
+    <tr>
+        <td>下载链接</td>
+        <td>下载状态</td>
+        <td>保存位置</td>
+        <td>起始时间</td>
+        <td>结束时间</td>
+        <td>所在时区</td>
+        <td>重试次数</td>
+    </tr>
+    </thead>
+    <tbody>
+%for task in CurrentTask:
+    <tr>
+        <td>${task[1].decode('utf-8')}</td>
+%if task[2] == 0:
+        <td>已暂停</td>
+%elif task[2] == 1:
+        <td>等待中</td>
+%elif task[2] == 2:
+        <td>正在下载</td>
+%endif
+        <td>${task[3].decode('utf-8')}</td>
+        <td>${task[4].decode('utf-8')}</td>
+        <td>${task[5].decode('utf-8')}</td>
+        <td>${task[7].decode('utf-8')}</td>
+        <td>${task[8]}</td>
+    </tr>
+%endfor
+    </tbody>
+</table>
+</body>
+</html>

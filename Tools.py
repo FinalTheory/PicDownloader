@@ -9,9 +9,26 @@ from GlobalDefs import *
 import sqlite3
 import sys
 import web
+import os
 from threading import Lock
 # web.config.debug = False
 
+
+# 首先是一些辅助函数的定义：
+
+def check_path(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def get_dir_size(dir_path):
+   size = 0
+   nums = 0
+   for root, dirs, files in os.walk(dir_path):
+       size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
+       nums += len(files)
+   return size, nums
+
+# 下面是数据库处理类和配置文件处理类
 
 class DataBaseManager():
 
@@ -66,6 +83,19 @@ class ConfigLoader():
         self.config = ConfigParser()
         self.config.read(cfg_name)
         self.system = dict(self.config.items('system'))
+        self.config_check()
+
+    def config_check(self):
+        try:
+            # 首先检查设定的全局存储目录是否合法
+            check_path(self.read('global_pos'))
+            # 然后检查管理员的下载目录是否存在
+            root_path = os.path.join(self.read('global_pos'), 'root')
+            if not os.path.exists(root_path):
+                os.mkdir(root_path)
+        except Exception, err:
+            showerror(u'系统错误', u'原因：%s' % err)
+            exit(-1)
 
     def read(self, key):
         return self.system.get(key)
@@ -87,7 +117,7 @@ class LogManager:
             # 自动加上换行
             if msg[-1] != '\n':
                 msg += '\n'
-            fid.write(msg)
+            fid.write(msg.decode('gb18030'))
         self.mutex.release()
 
 

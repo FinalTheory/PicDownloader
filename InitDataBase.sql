@@ -6,7 +6,13 @@ CREATE TABLE `UserTask` (
 	`RepeatType`	INTEGER NOT NULL,
 	`RepeatValue`	TEXT NOT NULL,
 	`TimeZone`	TEXT NOT NULL,
-	`Status`	INTEGER NOT NULL
+	`Status`	INTEGER NOT NULL,
+	`SubDirectory`	TEXT DEFAULT '',
+	`NameRule` TEXT DEFAULT 'auto',
+	`TaskTime` INTEGER DEFAULT 12,
+	`Downloader` TEXT DEFAULT 'python',
+	`CheckType` TEXT DEFAULT 'auto',
+	`CheckSize` INTEGER DEFAULT 4096
 );
 
 CREATE TABLE `CurrentTask` (

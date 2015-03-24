@@ -12,6 +12,7 @@ from subprocess import call
 from collections import deque
 from time import sleep
 from urllib import urlretrieve
+from random import random
 
 
 class BasicDownloader:
@@ -116,11 +117,26 @@ class ThreadPool:
         self.items = Semaphore(0)
         self.mutex = Lock()
 
+    # 这个函数用来查看当前正在工作的线程
+    def count_working_thread(self):
+        count = 0
+        for i in xrange(self.max_threads):
+            # 非阻塞地尝试获取线程的锁
+            # 如果能够得到，则这个线程未在工作
+            if self.thread_locks[i].aquire(False):
+                count += 1
+                self.thread_locks[i].release()
+        return self.max_threads - count
+
     def work_thread(self, my_idx):
         while True:
             sleep(0.1)
             self.thread_locks[my_idx].acquire()
             data = self.remove()
+            # 如果处于多线程调试模式
+            # 则线程挂起随机的时间，模拟下载过程
+            if self.is_debug:
+                sleep(5*random())
             # 从缓冲区中抓取任务并执行下载
             if data['Downloader'] == 'python':
                 PythonDownloader(data['URL'],

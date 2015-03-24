@@ -147,6 +147,7 @@ class DownloadServer():
     # 将未过期的任务添加到下载线程池
     # 任务被重试的次数越多，则下载优先级越低
     def update_worker(self, overwrite_time=None):
+        # TODO: 添加任务前先检查当前网络是否连通
         # 首先选择所有任务列表中未暂停且未被下载中的任务
         sql = "SELECT * FROM `CurrentTask` WHERE `Status` = 1 ORDER BY `RepeatTimes` ASC"
         all_task = db.Query(sql)

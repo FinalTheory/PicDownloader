@@ -418,30 +418,22 @@ class Admin():
 
                     # TODO: 这里可以为更多设置项增加检查函数，似乎这就是单子的一种用法吧？
                     CheckFunc = {
-                        'Downloader': None,
                         'SiteName': None,
                         'GlobalPos': check_path,
-                        'TaskTime': int,
-                        'NameRule': str,
                         'DateCheckingInterval': int,
                         'WorkerCheckingInterval': int,
+                        'CleanerCheckingInterval': int,
                         'PortName': int,
-                        'CheckIfSuccess': str,
-                        'SizeIfSuccess': int,
                         'MaxThreads': int,
                         'MaxBuf': int
                     }
                     ConfigName2Str = {
-                        'Downloader': 'downloader',
                         'SiteName': 'site_name',
                         'GlobalPos': 'global_pos',
-                        'TaskTime': 'task_time',
-                        'NameRule': 'name_rule',
                         'DateCheckingInterval': 'date_checking_interval',
                         'WorkerCheckingInterval': 'worker_checking_interval',
+                        'CleanerCheckingInterval': 'cleaner_checking_interval',
                         'PortName': 'port_name',
-                        'CheckIfSuccess': 'check_if_success',
-                        'SizeIfSuccess': 'size_if_success',
                         'MaxThreads': 'max_threads',
                         'MaxBuf': 'max_buf'
                     }
@@ -493,6 +485,7 @@ class ModifyTasks():
 
     def POST(self):
         pass
+
 
 class Log():
     def GET(self):

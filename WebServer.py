@@ -6,6 +6,7 @@ import json
 import sha
 import web
 import os
+import sys
 from random import random
 from mako.template import Template
 from time import time
@@ -500,5 +501,7 @@ class Log():
 
 def start_web_server():
     app = web.application(urls, globals())
+    sys.stderr.write('Web server started at %d port!\n' % int(cfg.read('port_name')))
     # 启动http服务监听指定端口
     web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", int(cfg.read('port_name'))))
+

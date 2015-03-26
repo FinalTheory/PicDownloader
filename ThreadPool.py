@@ -16,7 +16,13 @@ from random import random
 
 
 class BasicDownloader:
-    def __init__(self, URL, Location, TaskID, check_type, check_size, is_debug):
+    def __init__(self,
+                 URL,
+                 Location,
+                 TaskID,
+                 check_type,
+                 check_size,
+                 is_debug):
         sql = "UPDATE `CurrentTask` SET `Status` = 2 WHERE `TaskID` = %d" % TaskID
         db.Execute(sql)
         self.download(URL, Location, is_debug)
@@ -68,7 +74,9 @@ class Aria2Downloader(BasicDownloader):
                u'--max-connection-per-server=3',
                u'--allow-overwrite=true']
         if is_debug:
-            return cmd
+            # 如果处于多线程调试模式
+            # 则线程挂起随机的时间，模拟下载过程
+            sleep(random()+1)
         else:
             try:
                 call(cmd)
@@ -82,7 +90,9 @@ class WgetDownloader(BasicDownloader):
                u'--output-document=%s' % Location,
                u'--no-check-certificate']
         if is_debug:
-            return ' '.join(cmd)
+            # 如果处于多线程调试模式
+            # 则线程挂起随机的时间，模拟下载过程
+            sleep(random()+1)
         else:
             try:
                 call(cmd)
@@ -93,7 +103,9 @@ class WgetDownloader(BasicDownloader):
 class PythonDownloader(BasicDownloader):
     def download(self, URL, Location, is_debug):
         if is_debug:
-            return u'urlretrieve {} to {}'.format(URL, Location)
+            # 如果处于多线程调试模式
+            # 则线程挂起随机的时间，模拟下载过程
+            sleep(random()+1)
         else:
             try:
                 urlretrieve(URL, Location)
@@ -103,9 +115,9 @@ class PythonDownloader(BasicDownloader):
 
 class ThreadPool:
     def __init__(self,
+                 is_debug=False,
                  max_threads=32,
-                 max_buf=4096,
-                 is_debug=False):
+                 max_buf=4096):
         # 定义锁以及相关变量
         self.max_threads = max_threads
         self.working_queue = deque()
@@ -123,7 +135,7 @@ class ThreadPool:
         for i in xrange(self.max_threads):
             # 非阻塞地尝试获取线程的锁
             # 如果能够得到，则这个线程未在工作
-            if self.thread_locks[i].aquire(False):
+            if self.thread_locks[i].acquire(False):
                 count += 1
                 self.thread_locks[i].release()
         return self.max_threads - count
@@ -131,12 +143,9 @@ class ThreadPool:
     def work_thread(self, my_idx):
         while True:
             sleep(0.1)
-            self.thread_locks[my_idx].acquire()
             data = self.remove()
-            # 如果处于多线程调试模式
-            # 则线程挂起随机的时间，模拟下载过程
-            if self.is_debug:
-                sleep(5*random())
+            # 先对线程加锁，用来确认是否工作中
+            self.thread_locks[my_idx].acquire()
             # 从缓冲区中抓取任务并执行下载
             if data['Downloader'] == 'python':
                 PythonDownloader(data['URL'],

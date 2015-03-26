@@ -17,12 +17,12 @@ from GlobalDefs import *
 
 
 class DownloadServer():
-    def __init__(self):
+    def __init__(self, is_debug=False):
         self.prev_day = {}
         self.thread_pool = ThreadPool(
+            is_debug,
             int(cfg.read('max_threads')),
             int(cfg.read('max_buf')),
-            cfg.read('downloader'),
         )
         # 注意先清空先前留下的下载任务
         db.Execute("DELETE FROM `CurrentTask`")

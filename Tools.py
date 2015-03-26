@@ -2,9 +2,7 @@
 # 在本文件中定义了一些操控配置和数据文件的工具
 __author__ = 'FinalTheory'
 
-from tkMessageBox import showerror
 from ConfigParser import ConfigParser
-import Tkinter as tk
 from GlobalDefs import *
 import sqlite3
 import sys
@@ -73,12 +71,10 @@ class DataBaseManager():
 
 class ConfigLoader():
     def __init__(self):
-        root = tk.Tk()
-        root.withdraw()
         try:
             open(cfg_name, 'r').close()
         except:
-            showerror(u'严重错误', u'无法读取配置文件！程序自动退出。')
+            sys.stderr.write(u'严重错误，无法读取配置文件！程序自动退出。\n')
             exit(-1)
         self.config = ConfigParser()
         self.config.read(cfg_name)
@@ -94,7 +90,7 @@ class ConfigLoader():
             if not os.path.exists(root_path):
                 os.mkdir(root_path)
         except Exception, err:
-            showerror(u'系统错误', u'原因：%s' % err)
+            sys.stderr.write(u'系统错误，原因：%s\n' % err)
             exit(-1)
 
     def read(self, key):

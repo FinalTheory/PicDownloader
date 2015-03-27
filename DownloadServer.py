@@ -104,10 +104,12 @@ class DownloadServer():
                 Location = cfg.read('global_pos')
                 # 2. 然后定位到用户家目录位置
                 Location = os.path.join(Location, UID)
-                # 3. 再定位到规则目录位置，这里的类型都是str
+                # 3. 再定位到规则目录位置，这里的类型都是unicode
                 RuleName = task[3]
                 SubDir = task[8]
                 if SubDir:
+                    if type(SubDir) == str:
+                        SubDir = SubDir.decode('utf-8')
                     Location = os.path.join(Location, SubDir)
                 # 4. 最后根据命名规则确定文件名
                 if task[9] == 'auto':
@@ -201,10 +203,10 @@ class DownloadServer():
             # 如果超出了文件数量配额或者文件大小配额
             if TotalSize > MaxSize or TotalFiles > MaxFiles:
                 # 首先暂停该用户所有任务
-                sql = "UPDATE `UserTask` SET `Status` = 0 WHERE `UID` = %s" % UID
+                sql = "UPDATE `UserTask` SET `Status` = 0 WHERE `UID` = '%s'" % UID
                 db.Execute(sql)
                 # 其次删除所有正在进行的任务
-                sql = "DELETE FROM `CurrentTask` WHERE `UID` = %s" % UID
+                sql = "DELETE FROM `CurrentTask` WHERE `UID` = '%s'" % UID
                 db.Execute(sql)
 
     # “生产者”函数的守护线程

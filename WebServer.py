@@ -5,6 +5,7 @@ __author__ = 'FinalTheory'
 import json
 import sha
 import web
+web.config.debug = False
 import os
 import sys
 from random import random
@@ -169,8 +170,12 @@ class ModifyRules():
             if UserInfo['UserStatus'] == USER_STATUS_FORBIDDEN:
                 return Notice(u'无效访问',  u'被封禁用户无权操作！', '/login')
             MyTemplate = CreateMyTemplate('ModifyRules.html')
-            sql = "SELECT Rule_Name, URL_Rule, Status, RepeatType, RepeatValue, TaskID, TimeZone " \
-                  "FROM UserTask WHERE UID='%s'" % UserInfo['UID']
+            if UserInfo['UserStatus'] == USER_STATUS_ADMIN:
+                sql = "SELECT Rule_Name, URL_Rule, Status, RepeatType, RepeatValue, TaskID, TimeZone " \
+                      "FROM UserTask"
+            else:
+                sql = "SELECT Rule_Name, URL_Rule, Status, RepeatType, RepeatValue, TaskID, TimeZone " \
+                      "FROM UserTask WHERE UID='%s'" % UserInfo['UID']
             results = db.Query(sql)
             return MyTemplate.render(results=results)
         else:
@@ -188,6 +193,8 @@ class ModifyRules():
             data = web.input(month=[], day=[], hour=[], minute=[])
             action = data.get('action', '')
             URL_Rule = data.get('URL_Rule', '').encode('utf-8')
+            if URL_Rule[0:7] != 'http://':
+                URL_Rule = 'http://%s' % URL_Rule
             Rule_Name = data.get('Rule_Name', '').encode('utf-8')
             Status = int(data.get('Status', '0'))
             TaskID = int(data.get('TaskID', '0'))
@@ -415,8 +422,6 @@ class Admin():
                     })
             elif action == 'config':
                 try:
-                    # 上面先定义一些检查输入数据是否合法的函数
-
                     # TODO: 这里可以为更多设置项增加检查函数，似乎这就是单子的一种用法吧？
                     CheckFunc = {
                         'SiteName': None,
@@ -478,7 +483,10 @@ class ModifyTasks():
             if UserInfo['UserStatus'] == USER_STATUS_FORBIDDEN:
                 return Notice(u'无效访问',  u'被封禁用户无权操作！', '/login')
             MyTemplate = CreateMyTemplate('ModifyTasks.html')
-            sql = "SELECT * FROM `CurrentTask` WHERE `UID` = '%s'" % UserInfo['UID']
+            if UserInfo['UserStatus'] == USER_STATUS_ADMIN:
+                sql = "SELECT * FROM `CurrentTask`"
+            else:
+                sql = "SELECT * FROM `CurrentTask` WHERE `UID` = '%s'" % UserInfo['UID']
             results = db.Query(sql)
             return MyTemplate.render(CurrentTask=results)
         else:

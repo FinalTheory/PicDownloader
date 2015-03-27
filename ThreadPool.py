@@ -26,14 +26,17 @@ class BasicDownloader:
         sql = "UPDATE `CurrentTask` SET `Status` = 2 WHERE `TaskID` = %d" % TaskID
         db.Execute(sql)
         self.download(URL, Location, is_debug)
-        status = self.check_if_success(Location, check_type, check_size)
+        status = self.check_if_success(Location, check_type, check_size, is_debug)
         if status:
             # 若下载成功，则从未完成列表中删除
             sql = "DELETE FROM `CurrentTask` WHERE `TaskID` = %d" % TaskID
             log.log_message(u'[INFO] Task %d downloaded successfully to %s at %s'
                             % (TaskID, Location, datetime.now().ctime()))
         else:
-            # 否则，就将其下载次数+1以降低优先级，并且恢复正常状态
+            # 首先删除下载失败的文件
+            if os.path.exists(Location):
+                os.remove(Location)
+            # 然后将其下载次数+1以降低优先级，并且恢复正常状态
             sql = "UPDATE `CurrentTask` SET `RepeatTimes` = `RepeatTimes` + 1, " \
                   "`Status` = 1 WHERE `TaskID` = %d" % TaskID
             log.log_message(u'[INFO] Task %d download to %s failed at %s'
@@ -43,7 +46,11 @@ class BasicDownloader:
     def download(self, URL, Location, is_debug):
         pass
 
-    def check_if_success(self, Location, check_type, check_size):
+    def check_if_success(self, Location, check_type, check_size, is_debug):
+        # 调试模式下，直接认为下载成功
+        if is_debug:
+            return True
+
         # 首先检查文件是否存在
         if not os.path.exists(Location):
             return False
@@ -51,7 +58,7 @@ class BasicDownloader:
         # 然后有两种判断下载是否成功的方法：
         # 1. 用内置的库读取文件头，从而判断是否成功
         # 2. 检查文件大小，如果大于预设的尺寸，则认为下载成功
-        # 3. 不检查，直接返回成功
+        # 3. 调试模式下不检查，直接返回成功
         if check_type == 'auto':
             if imghdr.what(Location) is None:
                 return False
@@ -62,8 +69,6 @@ class BasicDownloader:
                 return True
             else:
                 return False
-        else:
-            return True
 
 
 class Aria2Downloader(BasicDownloader):
@@ -77,6 +82,9 @@ class Aria2Downloader(BasicDownloader):
             # 如果处于多线程调试模式
             # 则线程挂起随机的时间，模拟下载过程
             sleep(random()+1)
+            # 然后将下载的命令行写入对应文件
+            with open(Location, 'w') as fid:
+                fid.write(' '.join(cmd))
         else:
             try:
                 call(cmd)
@@ -93,6 +101,9 @@ class WgetDownloader(BasicDownloader):
             # 如果处于多线程调试模式
             # 则线程挂起随机的时间，模拟下载过程
             sleep(random()+1)
+            # 然后将下载的命令行写入对应文件
+            with open(Location, 'w') as fid:
+                fid.write(' '.join(cmd))
         else:
             try:
                 call(cmd)
@@ -106,6 +117,9 @@ class PythonDownloader(BasicDownloader):
             # 如果处于多线程调试模式
             # 则线程挂起随机的时间，模拟下载过程
             sleep(random()+1)
+            # 然后将下载的命令行写入对应文件
+            with open(Location, 'w') as fid:
+                fid.write(u'urlretrieve "%s" to "%s"' % (URL, Location))
         else:
             try:
                 urlretrieve(URL, Location)

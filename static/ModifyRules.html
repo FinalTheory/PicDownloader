@@ -130,6 +130,52 @@
         $(".btn_delete").click(function() {
             SubmitModifyData($(this), "action=delete");
         });
+        //下面这些按钮用于插入各种变量
+        $("#add_day").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%day%");
+        });
+        $("#add_mon").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%mon%");
+        });
+        $("#add_year").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%year%");
+        });
+        $("#add_day2").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%prev_day%");
+        });
+        $("#add_mon2").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%prev_mon%");
+        });
+        $("#add_year2").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%prev_year%");
+        });
+        $("#add_day3").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%next_day%");
+        });
+        $("#add_mon3").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%next_mon%");
+        });
+        $("#add_year3").click(function() {
+            var input = $("#URL_input");
+            var cur_text = input.val();
+            input.val(cur_text + "%next_year%");
+        });
         HideAll();
     })
 </script>
@@ -147,7 +193,22 @@
             </tr>
             <tr>
                 <td>规则链接</td>
-                <td><input type="text" name="URL_Rule" value="" size="60" /></td>
+                <td>
+                    <input type="text" name="URL_Rule" value="" size="60" id="URL_input" />
+                    <div>
+                        <input type="button" id="add_day" value="日(今日)">
+                        <input type="button" id="add_mon" value="月(今日)">
+                        <input type="button" id="add_year" value="年(今日)">
+                        <br>
+                        <input type="button" id="add_day2" value="日(昨天)">
+                        <input type="button" id="add_mon2" value="月(昨天)">
+                        <input type="button" id="add_year2" value="年(昨天)">
+                        <br>
+                        <input type="button" id="add_day3" value="日(明天)">
+                        <input type="button" id="add_mon3" value="月(明天)">
+                        <input type="button" id="add_year3" value="年(明天)">
+                    </div>
+                </td>
             </tr>
             <tr>
                 <td>定时执行</td>
@@ -258,7 +319,6 @@
                     <input type="text" size="4" name="CheckSize" value="4096" class="InputFileSize">
                     <strong class="InputFileSize">Bytes</strong>
                 </td>
-
             </tr>
         </table>
     </form>

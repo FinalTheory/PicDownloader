@@ -7,7 +7,7 @@ import unittest
 import BeautifulSoup as bs
 from pytz import timezone
 import requests
-from .. Tools import cfg, db
+from .. Tools import cfg, db, check_port
 from .. WebServer import start_web_server
 from .. DownloadServer import DownloadServer
 from thread import start_new_thread
@@ -16,13 +16,12 @@ from shutil import copyfile, rmtree
 from tempfile import mkdtemp
 from time import sleep
 
+temp_file_name = 'test.txt'
 
 # TODO: 增加完善的单元测试
 # 主要测试的内容：
-# 1. 修改个人信息等功能，以及其异常处理
 # 2. 用户管理、系统全局设置等
 # 3. 下载任务的更新、处理等，重点测试对时区的支持
-# 4. 线程池的并发性测试，满载模拟
 
 
 data_modify_rule = {
@@ -75,10 +74,14 @@ class BasicTest(unittest.TestCase):
     # 类初始化和清理函数
     @classmethod
     def setUpClass(cls):
+        # 首先检查目标端口是否已经启动了一个程序
+        if check_port(cfg.read('port_name')):
+            sys.stderr.write('Port %s is being used! Exit!\n' % cfg.read('port_name'))
+            exit(-1)
         db_file = cfg.read('db_filename')
         db_file = os.path.join(os.getcwd(), db_file)
         cfg_file = os.path.join(os.getcwd(), 'config.ini')
-        # 首先备份现有的数据库
+        # 备份现有的数据库
         if os.path.exists(db_file):
             os.rename(db_file, db_file + '.bak')
         # 备份现有的配置文件
@@ -120,6 +123,9 @@ class TestWebFunction(BasicTest):
 
     def __init__(self, *args, **kwargs):
         super(TestWebFunction, self).__init__(*args, **kwargs)
+        # 清空日志文件
+        open(temp_file_name, 'w').close()
+        self.fid = open(temp_file_name, 'w+')
 
     # 返回登录后的session以及信息
     def login(self, UID, password, expires=31536000):
@@ -135,6 +141,12 @@ class TestWebFunction(BasicTest):
 
     def login_root(self):
         return self.login('root', '3.1415926')
+
+    def log(self, msg):
+        if msg[-1] != '\n':
+            msg += '\n'
+        self.fid.write(msg)
+
 
 # ********************************下面是正式测试用例********************************
 
@@ -339,18 +351,346 @@ class TestWebFunction(BasicTest):
         sleep(0.2)
         self.assertTrue(server.thread_pool.count_working_thread() == num_tasks)
         # 还要等待所有线程结束才行，不然数据库有锁
-        sleep(3)
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        # 最后检查所有任务的状态是否是成功
+        # 也就是CurrentTask表中是否为空
+        self.assertTrue(db.Query(sql)[0][0] == 0)
 
-    def test_99_modify_del_user(self):
-        pass
+    def test_06_modify_rules(self):
+        post_data = {
+            'action': 'modify',
+            'TaskID': '',
+            'Rule_Name': '',
+            'URL_Rule': '',
+            'Status': '1'
+        }
+        s, r = self.login_root()
+        r = s.get('http://localhost/modify_rules')
+        soup = bs.BeautifulSoup(r.text)
+        res = soup.findAll('input', {'type': 'hidden', 'name': 'TaskID'})
+        task_id = map(lambda x: str(x['value']), res)
+        new_urls = [
+            'http://www.test.com/%day%.png',
+            'www.test.com/%prev_day%.png',
+            'http://www.test.com/%next_day%.png',
+            'www.test.com/%year%%mon%%day%.png',
+            'www.test.com/%prev_year%%next_mon%%day%.png'
+        ]
+        self.assertTrue(len(task_id) == len(new_urls))
+        for idx in xrange(len(new_urls)):
+            post_data['TaskID'] = task_id[idx]
+            post_data['Rule_Name'] = u'测试修改规则' + str(idx + 1)
+            post_data['URL_Rule'] = new_urls[idx]
+            r = s.post('http://localhost/modify_rules', post_data)
+            self.assertTrue('200' in r.text)
+        # 最后再检查一下规则名称是否被成功修改
+        r = s.get('http://localhost/modify_rules')
+        self.assertTrue(u'测试修改规则' in r.text)
 
-    def test_add_tasks(self):
-        pass
+    def test_07_check_keywords(self):
+        s, r = self.login_root()
+        # 这个测试是检查线程功能是否正确
+        num_tasks = 5
+        # 创建一个下载服务器
+        server = DownloadServer(True)
+        # 首先更新当前任务
+        server.update_calendar()
+        # 检查当前任务表中是否出现了足够的任务
+        sql = "SELECT COUNT(`TaskID`) FROM `CurrentTask`"
+        self.assertTrue(db.Query(sql)[0][0] == num_tasks)
+        # 此时所有任务应该都在等待
+        r = s.get('http://localhost/modify_tasks')
+        self.assertTrue(r.text.count(u'等待中') == 5)
+        soup = bs.BeautifulSoup(r.text)
+        # 获取所有任务的保存位置
+        locations = map(lambda x: x.renderContents().strip('\n'),
+                        soup.findAll('td', {'id': 'SavePos'}))
+        # 然后将任务加载到缓冲区，检查是否出现了正确的任务
+        server.update_worker()
+        self.assertTrue(len(server.thread_pool.working_queue) == num_tasks)
+        # 接下来启动线程池
+        server.thread_pool.start()
+        # 检查任务缓冲区中的元素是否被移除
+        sleep(0.2)
+        self.assertTrue(len(server.thread_pool.working_queue) == 0)
+        # 检查线程池中是否启动了正确数量的线程
+        sleep(0.2)
+        self.assertTrue(server.thread_pool.count_working_thread() == num_tasks)
+        # 还要等待所有线程结束才行，不然数据库有锁
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        # 最后检查所有任务的状态是否是成功
+        # 也就是CurrentTask表中是否为空
+        self.assertTrue(db.Query(sql)[0][0] == 0)
+        # 然后把所有文件中的内容打印出来
+        # 内容就是下载用的命令
+        for loc in locations:
+            data = open(loc.decode('utf-8'), 'r').read()
+            self.log(data)
 
-    def test_query_tasks(self):
-        pass
+    def test_08_del_prev_rules(self):
+        # 这个case是要删除掉先前的所有规则
+        s, r = self.login_root()
+        r = s.get('http://localhost/modify_rules')
+        # 通过解析页面的方式获取任务ID
+        soup = bs.BeautifulSoup(r.text)
+        res = soup.findAll('input', {'type': 'hidden', 'name': 'TaskID'})
+        TaskIDs = map(lambda x: str(x['value']), res)
+        self.assertTrue(len(TaskIDs) == 5)
+        for ID in TaskIDs:
+            post_data = {
+                'action': 'delete',
+                'TaskID': ID
+            }
+            r = s.post('http://localhost/modify_rules', post_data)
+            self.assertTrue('200' in r.text)
+        # 再次读取规则页面，检查所有规则是否都被删除
+        r = s.get('http://localhost/modify_rules')
+        soup = bs.BeautifulSoup(r.text)
+        res = soup.findAll('input', {'type': 'hidden', 'name': 'TaskID'})
+        self.assertTrue(len(res) == 0)
 
-    def test_system_admin(self):
+    def test_09_modify_system_settings(self):
+        s, r = self.login_root()
+        post_data = {
+            'action': 'config',
+            'SiteName': u'超级下载器',
+            'GlobalPos': cfg.read('global_pos'),
+            'PortName': '',
+            'DateCheckingInterval': '601',
+            'WorkerCheckingInterval': '4',
+            'CleanerCheckingInterval': '86401',
+            'MaxThreads': '10',
+            'MaxBuf': '1024'
+        }
+        # 测数据无效的情况
+        r = s.post('http://localhost/admin', post_data)
+        self.assertTrue('400' in r.text)
+        # 测操作合法的情况
+        post_data['PortName'] = '80'
+        r = s.post('http://localhost/admin', post_data)
+        self.assertTrue('200' in r.text)
+        self.assertTrue(cfg.read('max_threads') == '10')
+        self.assertTrue(cfg.read('max_buf') == '1024')
+        self.assertTrue(cfg.read('date_checking_interval') == '601')
+        self.assertTrue(cfg.read('worker_checking_interval') == '4')
+        self.assertTrue(cfg.read('cleaner_checking_interval') == '86401')
+
+    def test_10_full_press_test(self):
+        num_tasks = int(cfg.read('max_threads')) + 5
+        # 增加大量任务
+        s, r = self.login('test01', '12345678')
+        # 确认正确登录
+        self.assertTrue(u'管理规则' in r.text)
+        tz = 'UTC'
+        post_url = 'http://localhost/modify_rules'
+        post_data = data_modify_rule
+        now = datetime.now(timezone(tz))
+        # 先批量增加规则
+        for i in xrange(num_tasks):
+            test_name = u'压力测试' + str(i + 1)
+            post_data['RepeatType'] = 'day'
+            post_data['Weekday'] = now.isoweekday()
+            post_data['hour'][0] = str(now.hour)
+            post_data['minute'][0] = str(now.minute)
+            post_data['Rule_Name'] = test_name
+            post_data['Sub_Dir'] = test_name
+            post_data['TimeZone'] = tz
+            r = s.post(post_url, data=post_data)
+            # 检查操作是否成功
+            self.assertTrue('200' in r.text)
+            # 检查是否生成了对应的目录
+            self.assertTrue(os.path.exists(os.path.join(temp_dir, 'test01', test_name)))
+        # 创建下载服务器（调试模式）
+        server = DownloadServer(True)
+        # 首先更新当前任务
+        server.update_calendar()
+        # 检查当前任务表中是否出现了足够的任务
+        sql = "SELECT COUNT(`TaskID`) FROM `CurrentTask`"
+        self.assertTrue(db.Query(sql)[0][0] == num_tasks)
+        # 然后将任务加载到缓冲区，检查是否出现了正确数量的任务
+        server.update_worker()
+        self.assertTrue(len(server.thread_pool.working_queue) == num_tasks)
+        # 接下来启动线程池
+        server.thread_pool.start()
+        # 检查任务缓冲区中的元素数量
+        sleep(0.2)
+        self.assertTrue(len(server.thread_pool.working_queue) == 5)
+        # 检查线程池中是否启动了正确数量的线程
+        sleep(0.2)
+        self.assertTrue(server.thread_pool.count_working_thread() == int(cfg.read('max_threads')))
+        # 还是要等待所有线程结束才行，不然数据库有锁
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        # 最后检查所有任务的状态是否是成功
+        # 也就是CurrentTask表中是否为空
+        self.assertTrue(db.Query(sql)[0][0] == 0)
+
+    def test_11_modify_user_by_self(self):
+        s, r = self.login('test01', '12345678')
+        # 首先测试更改常规信息
+        post_data = {
+            'UserName': u'侯颖琳',
+            'Tel': '15689100026',
+            'E-mail': '123@qq.com',
+            'MaxFiles': '1124',
+            'MaxSize': '',
+            'NameRule': 'default',
+            'Downloader': 'aria2',
+            'OldPassWord': '12345678',
+            'NewPassWord': '1994.2.21'
+        }
+        r = s.post('http://localhost/settings', post_data)
+        self.assertTrue(u'是否合法' in r.text)
+        post_data['MaxSize'] = '1224'
+        post_data['OldPassWord'] = ''
+        r = s.post('http://localhost/settings', post_data)
+        self.assertTrue(u'密码错误' in r.text)
+        post_data['OldPassWord'] = '12345678'
+        r = s.post('http://localhost/settings', post_data)
+        self.assertTrue(u'操作成功' in r.text)
+        sql = "SELECT `PassWord`, `UserName`, `MaxSize` FROM Users WHERE UID = 'test01'"
+        self.assertTrue(db.Query(sql)[0][0] == '1994.2.21')
+        self.assertTrue(db.Query(sql)[0][1] == r'侯颖琳')
+        self.assertTrue(db.Query(sql)[0][2] == 1224)
+
+    def test_12_modify_user_by_admin(self):
+        post_data = {
+            'action': 'modify',
+            'UID': 'test02',
+            'UserName': u'侯颖琳是二货',
+            'PassWord': '3.1415926',
+            'MaxFiles': '5',
+            'MaxSize': '1'
+        }
+        s, r = self.login_root()
+        r = s.post('http://localhost/admin', post_data)
+        self.assertTrue('200' in r.text)
+        sql = "SELECT `UserName`, `MaxFiles`, `MaxSize`," \
+              "`PassWord` FROM `Users` WHERE `UID` = '%s'" % 'test02'
+        self.assertTrue(db.Query(sql)[0][0] == r'侯颖琳是二货')
+        self.assertTrue(db.Query(sql)[0][1] == 5)
+        self.assertTrue(db.Query(sql)[0][2] == 1)
+        self.assertTrue(db.Query(sql)[0][3] == '3.1415926')
+
+    def test_13_del_user_by_admin(self):
+        post_data = {
+            'action': 'delete',
+            'UID': 'test01',
+            'UserName': u'黄',
+            'PassWord': '12345678',
+            'MaxFiles': '1234',
+            'MaxSize': '1234'
+        }
+        s, r = self.login_root()
+        # 先删除一个用户
+        r = s.post('http://localhost/admin', post_data)
+        self.assertTrue('200' in r.text)
+        # 然后检查数据库
+        sql1 = "SELECT COUNT(`UID`) FROM Users WHERE `UID` = 'test01'"
+        sql2 = "SELECT COUNT(`UID`) FROM Users WHERE `UID` = 'test02'"
+        sql3 = "SELECT COUNT(`TaskID`) FROM UserTask WHERE `UID` = 'test01'"
+        sql4 = "SELECT COUNT(`TaskID`) FROM UserTask WHERE `UID` = 'test02'"
+        self.assertTrue(db.Query(sql1)[0][0] == 0)
+        self.assertTrue(db.Query(sql2)[0][0] == 1)
+        # 保证数据库中没有相应的任务
+        self.assertTrue(db.Query(sql3)[0][0] == 0)
+        self.assertTrue(db.Query(sql4)[0][0] == 0)
+        # 并且也已经删除了所有文件夹
+        self.assertFalse(os.path.exists(os.path.join(cfg.read('global_pos'), 'test01')))
+        self.assertTrue(os.path.exists(os.path.join(cfg.read('global_pos'), 'test02')))
+
+    def test_14_disk_quota_01(self):
+        num_tasks = 5
+        s, r = self.login('test02', '3.1415926')
+        # 确认正确登录
+        self.assertTrue(u'管理规则' in r.text)
+        tz = 'UTC'
+        post_url = 'http://localhost/modify_rules'
+        post_data = data_modify_rule
+        now = datetime.now(timezone(tz))
+        # 先批量增加规则
+        for i in xrange(num_tasks):
+            test_name = u'磁盘配额测试' + str(i + 1)
+            post_data['RepeatType'] = 'day'
+            post_data['Weekday'] = now.isoweekday()
+            post_data['hour'][0] = str(now.hour)
+            post_data['minute'][0] = str(now.minute)
+            post_data['Rule_Name'] = test_name
+            post_data['Sub_Dir'] = test_name
+            post_data['TimeZone'] = tz
+            r = s.post(post_url, data=post_data)
+            # 检查操作是否成功
+            self.assertTrue('200' in r.text)
+            # 检查是否生成了对应的目录
+            self.assertTrue(os.path.exists(os.path.join(temp_dir, 'test02', test_name)))
+        # 创建下载服务器（调试模式）
+        server = DownloadServer(True)
+        # 首先更新当前任务
+        server.update_calendar()
+        # 然后将任务加载到缓冲区，检查是否出现了正确数量的任务
+        server.update_worker()
+        # 接下来启动线程池
+        server.thread_pool.start()
+        # 等待所有线程退出
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        server.clean_worker()
+        sql = "SELECT COUNT(`TaskID`) FROM `UserTask` WHERE `UID` = 'test02' AND Status = 0"
+        # 应该不会触发清理
+        self.assertTrue(db.Query(sql)[0][0] == 0)
+
+    def test_14_disk_quota_02(self):
+        s, r = self.login('test02', '3.1415926')
+        # 确认正确登录
+        self.assertTrue(u'管理规则' in r.text)
+        tz = 'UTC'
+        post_url = 'http://localhost/modify_rules'
+        post_data = data_modify_rule
+        now = datetime.now(timezone(tz))
+        # 先批量增加一条新规则
+        test_name = u'磁盘配额测试6'
+        post_data['RepeatType'] = 'day'
+        post_data['Weekday'] = now.isoweekday()
+        post_data['hour'][0] = str(now.hour)
+        post_data['minute'][0] = str(now.minute)
+        post_data['Rule_Name'] = test_name
+        post_data['Sub_Dir'] = test_name
+        post_data['TimeZone'] = tz
+        r = s.post(post_url, data=post_data)
+        # 检查操作是否成功
+        self.assertTrue('200' in r.text)
+        # 检查是否生成了对应的目录
+        self.assertTrue(os.path.exists(os.path.join(temp_dir, 'test02', test_name)))
+        # 创建下载服务器（调试模式）
+        server = DownloadServer(True)
+        # 首先更新当前任务
+        server.update_calendar()
+        # 然后将任务加载到缓冲区，检查是否出现了正确数量的任务
+        server.update_worker()
+        # 接下来启动线程池
+        server.thread_pool.start()
+        # 等待所有线程退出
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        server.clean_worker()
+        sql = "SELECT COUNT(`TaskID`) FROM `UserTask` WHERE `UID` = 'test02' AND Status = 0"
+        # 这次应该会触发清理
+        self.assertTrue(db.Query(sql)[0][0] == 6)
+
+    def test_15_real_download_test(self):
+        # TODO: 测试三个下载器能否都正确覆盖文件
         pass
 
 if __name__ == '__main__':

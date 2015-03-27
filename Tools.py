@@ -5,11 +5,12 @@ __author__ = 'FinalTheory'
 from ConfigParser import ConfigParser
 from GlobalDefs import *
 import sqlite3
+import socket
 import sys
 import web
+web.config.debug = False
 import os
 from threading import Lock
-# web.config.debug = False
 
 
 # 首先是一些辅助函数的定义：
@@ -26,6 +27,18 @@ def get_dir_size(dir_path):
        nums += len(files)
    return size, nums
 
+def check_port(port):
+    port = int(port)
+    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sk.settimeout(0.1)
+    result = True
+    try:
+        sk.connect(('127.0.0.1', port))
+    except Exception:
+        result = False
+    sk.close()
+    return result
+
 # 下面是数据库处理类和配置文件处理类
 
 class DataBaseManager():
@@ -37,6 +50,7 @@ class DataBaseManager():
         except:
             self.InitDataBase()
             sys.stderr.write('Warning: database not found, created a new one!\n')
+        self.mutex = Lock()
 
     # Method to create a entire new database
     def InitDataBase(self):
@@ -50,11 +64,13 @@ class DataBaseManager():
                     conn.commit()
 
     def Execute(self, sql):
+        self.mutex.acquire()
         # connect to the database
         with sqlite3.connect(cfg.read('db_filename')) as conn:
             conn.text_factory = str
             conn.execute(sql)
             conn.commit()
+        self.mutex.release()
 
     def Query(self, sql):
         with sqlite3.connect(cfg.read('db_filename')) as conn:
@@ -91,6 +107,10 @@ class ConfigLoader():
                 os.mkdir(root_path)
         except Exception, err:
             sys.stderr.write(u'系统错误，原因：%s\n' % err)
+            exit(-1)
+        # 接下来检查端口是否可用
+        if check_port(self.read('port_name')):
+            sys.stderr.write(u'系统错误，端口被占用！\n')
             exit(-1)
 
     def read(self, key):

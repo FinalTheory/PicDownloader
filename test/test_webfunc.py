@@ -7,7 +7,7 @@ import unittest
 import BeautifulSoup as bs
 from pytz import timezone
 import requests
-from .. Tools import cfg, db, check_port
+from .. Tools import cfg, db, check_port, check_connect
 from .. WebServer import start_web_server
 from .. DownloadServer import DownloadServer
 from thread import start_new_thread
@@ -15,14 +15,9 @@ from datetime import datetime
 from shutil import copyfile, rmtree
 from tempfile import mkdtemp
 from time import sleep
+import imghdr
 
 temp_file_name = 'test.txt'
-
-# TODO: 增加完善的单元测试
-# 主要测试的内容：
-# 2. 用户管理、系统全局设置等
-# 3. 下载任务的更新、处理等，重点测试对时区的支持
-
 
 data_modify_rule = {
     # 操作类型
@@ -147,11 +142,29 @@ class TestWebFunction(BasicTest):
             msg += '\n'
         self.fid.write(msg)
 
-
+    # 复制一份测试过程中的数据库出来
+    def backup_db(self):
+        idx = 1
+        db_name = os.path.join(os.getcwd(), 'data.db')
+        base_name = os.path.join(os.getcwd(), 'data.db.debug')
+        new_name = base_name
+        while True:
+            if not os.path.exists(new_name):
+                copyfile(db_name, new_name)
+                break
+            else:
+                new_name = base_name + str(idx)
+                idx += 1
 # ********************************下面是正式测试用例********************************
 
     def test_00_init(self):
-        self.assertTrue(True)
+        # 首先检查网络连通性
+        internet = check_connect()
+        self.assertTrue(internet)
+        # 如果没网，则跳过所有测试
+        if not internet:
+            sys.stderr.write(u'请检查网络连通性！\n')
+            exit(-1)
 
     def test_01_login_logout(self):
         # 首先建立一个登录后的会话
@@ -433,7 +446,7 @@ class TestWebFunction(BasicTest):
             data = open(loc.decode('utf-8'), 'r').read()
             self.log(data)
 
-    def test_08_del_prev_rules(self):
+    def test_08_del_prev_rules(self, lenTaskIDs=5):
         # 这个case是要删除掉先前的所有规则
         s, r = self.login_root()
         r = s.get('http://localhost/modify_rules')
@@ -441,7 +454,7 @@ class TestWebFunction(BasicTest):
         soup = bs.BeautifulSoup(r.text)
         res = soup.findAll('input', {'type': 'hidden', 'name': 'TaskID'})
         TaskIDs = map(lambda x: str(x['value']), res)
-        self.assertTrue(len(TaskIDs) == 5)
+        self.assertTrue(len(TaskIDs) == lenTaskIDs)
         for ID in TaskIDs:
             post_data = {
                 'action': 'delete',
@@ -688,10 +701,79 @@ class TestWebFunction(BasicTest):
         sql = "SELECT COUNT(`TaskID`) FROM `UserTask` WHERE `UID` = 'test02' AND Status = 0"
         # 这次应该会触发清理
         self.assertTrue(db.Query(sql)[0][0] == 6)
+        sql = "SELECT COUNT(`TaskID`) FROM `CurrentTask` WHERE `UID` = 'test02'"
+        self.assertTrue(db.Query(sql)[0][0] == 0)
 
     def test_15_real_download_test(self):
+        # 首先删除所有先前的规则以及文件
+        self.test_08_del_prev_rules(6)
         # TODO: 测试三个下载器能否都正确覆盖文件
-        pass
+        s, r = self.login('test02', '3.1415926')
+        # 确认正确登录
+        self.assertTrue(u'管理规则' in r.text)
+        tz = 'UTC'
+        post_url = 'http://localhost/modify_rules'
+        post_data = data_modify_rule
+        now = datetime.now(timezone(tz))
+        # 先批量增加三条新规则
+        downloader = ['aria2', 'wget', 'python', 'aria2']
+        for idx, dwn in enumerate(downloader):
+            test_name = u'任务覆盖测试' + str(idx + 1)
+            post_data['RepeatType'] = 'day'
+            post_data['Weekday'] = now.isoweekday()
+            post_data['hour'][0] = str(now.hour)
+            post_data['minute'][0] = str(now.minute)
+            post_data['Rule_Name'] = test_name
+            post_data['Sub_Dir'] = test_name
+            if idx == 3: post_data['Sub_Dir'] = ''
+            post_data['TimeZone'] = tz
+            post_data['Downloader'] = dwn
+            post_data['URL_Rule'] = 'www.baidu.com/img/bdlogo.png'
+            r = s.post(post_url, data=post_data)
+            # 检查操作是否成功
+            self.assertTrue('200' in r.text)
+            # 检查是否生成了对应的目录
+            self.assertTrue(os.path.exists(os.path.join(temp_dir, 'test02', test_name if idx != 3 else '')))
+        # 创建下载服务器（正常模式）
+        server = DownloadServer()
+        # 首先更新当前任务
+        server.update_calendar()
+        # 此时所有任务应该都在等待
+        r = s.get('http://localhost/modify_tasks')
+        self.assertTrue(r.text.count(u'等待中') == 4)
+        soup = bs.BeautifulSoup(r.text)
+        # 获取所有任务的保存位置
+        locations = map(lambda x: x.renderContents().strip('\n').decode('utf-8'),
+                        soup.findAll('td', {'id': 'SavePos'}))
+        # 然后将任务加载到缓冲区
+        server.update_worker()
+        # 接下来启动线程池
+        server.thread_pool.start()
+        # 等待所有线程退出
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        # 检查所有文件是否下载成功
+        time_stamps = {}
+        self.assertTrue(len(locations) == 4)
+        for pos in locations:
+            self.assertTrue(imghdr.what(pos) is not None)
+            time_stamps[pos] = os.path.getmtime(pos)
+        # 然后重新下载
+        server.prev_day = {}
+        server.update_calendar()
+        server.update_worker()
+        # 等待所有线程退出
+        while True:
+            sleep(0.5)
+            if server.thread_pool.count_working_thread() == 0:
+                break
+        for pos in locations:
+            self.assertTrue(imghdr.what(pos).lower() == 'png')
+            # 确认文件被覆盖，即变得更新
+            self.assertTrue(os.path.getmtime(pos) > time_stamps[pos])
+
 
 if __name__ == '__main__':
     unittest.main()

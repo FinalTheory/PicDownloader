@@ -27,17 +27,25 @@ def get_dir_size(dir_path):
        nums += len(files)
    return size, nums
 
-def check_port(port):
+def check_port(port, ip='127.0.0.1', timeout=0.1):
     port = int(port)
     sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sk.settimeout(0.1)
+    sk.settimeout(timeout)
     result = True
     try:
-        sk.connect(('127.0.0.1', port))
+        sk.connect((ip, port))
     except Exception:
         result = False
     sk.close()
     return result
+
+def check_connect():
+    address = cfg.read('check_server_ip')
+    port = int(cfg.read('check_server_port'))
+    time_out = float(cfg.read('check_server_time_out'))
+    if check_port(port, address, time_out):
+        return True
+    return False
 
 # 下面是数据库处理类和配置文件处理类
 

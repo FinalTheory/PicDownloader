@@ -101,7 +101,7 @@ $RECYCLE.BIN/
 
 # User defined
 .idea/
-*.db
+*.db*
 *.png
 
 *.txt

@@ -8,6 +8,7 @@ import web
 web.config.debug = False
 import os
 import sys
+from re import match
 from random import random
 from mako.template import Template
 from time import time
@@ -148,6 +149,7 @@ class Register():
             E_mail = data.get('E-mail').encode('utf-8')
             MaxSize = int(data.get('MaxSize'))
             MaxFiles = int(data.get('MaxFiles'))
+            # TODO: 更改数据库格式，去除无用设置
             sql = "INSERT INTO `Users`(`UID`,`SessionID`,`UserStatus`," \
                   "`UserName`,`PassWord`,`Tel`,`E-mail`,`MaxSize`,`MaxFiles`,`Downloader`) " \
                   "VALUES ('%s',NULL,1,'%s','%s','%s','%s',%d,%d,'%s');" \
@@ -193,7 +195,8 @@ class ModifyRules():
             data = web.input(month=[], day=[], hour=[], minute=[])
             action = data.get('action', '')
             URL_Rule = data.get('URL_Rule', '').encode('utf-8')
-            if URL_Rule[0:7] != 'http://':
+            # 检查URL是否合法
+            if match('^\w+://', URL_Rule) is None:
                 URL_Rule = 'http://%s' % URL_Rule
             Rule_Name = data.get('Rule_Name', '').encode('utf-8')
             Status = int(data.get('Status', '0'))
@@ -421,6 +424,7 @@ class Admin():
                         'msg': u'%s\n请检查学号/工号是否合法！' % err
                     })
             elif action == 'config':
+                # TODO: 增加几个新设置项的处理机制
                 try:
                     # TODO: 这里可以为更多设置项增加检查函数，似乎这就是单子的一种用法吧？
                     CheckFunc = {

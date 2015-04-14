@@ -1,18 +1,84 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width">
+    
     <title>${title}</title>
-</head>
-<script src="/static/jquery-1.11.0.min.js"></script>
-<script type="text/javascript">
-    $(document).ready(function () {
-        alert("${msg}");
-        $("body").append('<meta http-equiv="refresh" content="0.5; url=${url}">')
-    });
-</script>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-responsive.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-icons.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-ui-light.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/datepicker.css">
+    <link rel="shortcut icon" href="/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/assets/ico/apple-touch-icon-57-precomposed.png">
+    <script src="/assets/js/modernizr-2.6.2.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="nav-bar">
+	<div class="row">
+	  <div class="span9">
+	    <div id="header-container">
+	      <a id="backbutton" class="win-backbutton" href="/"></a>
+	      <h5>下载器</h5>
+	      <div class="dropdown">
+		<a class="header-dropdown dropdown-toggle accent-color" data-toggle="dropdown" href="#">
+		  通知
+		  <b class="caret"></b>
+		</a>
+		<ul class="dropdown-menu">
+		  %if UserStatus == 0 or UserStatus == 1:
+		  <li><a href="/modify_tasks">查看任务</a></li>
+		  <li><a href="/modify_rules">管理规则</a></li>
+		  %endif
+		  %if UserStatus == 0:
+		  <li><a href="/admin">系统管理</a></li>
+		  <li><a href="/log">系统日志</a></li>
+		  %endif
+		  <li class="divider"></li>
+		  <li><a href="/faq">常见问题</a></li>
+		</ul>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+      </div>
 
-<body>
+      <div class="alert alert-block alert-error fade in">
+	<h4 class="alert-heading">通知</h4>
+        <p>${msg}</p>
+        <p>
+          <a class="btn btn-danger" href="${url}">返回</a>
+        </p>
+      </div>
 
+    </div>
+    
+    <!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+    <script src="//code.jquery.com/jquery-1.10.0.min.js"></script>
+    <script>window.jQuery || document.write(String.fromCharCode(60) + "script src='../assets/js/jquery-1.10.0.min.js'>\x3C/script>")</script>
+    <!--[if IE 7]>
+        <script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
+    <![endif]-->
+    
+    <script type="text/javascript" src="/assets/js/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-panorama.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-pivot.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-charms.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap-datepicker.js"></script>
+    <script type="text/javascript" src="/assets/js/holder.js"></script>
+    <script type="text/javascript" src="/assets/js/Chart.min.js"></script>
+  </body>
+</html>
 </body>
 
 </html>

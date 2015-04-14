@@ -1,14 +1,291 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width">
+    
     <title>下载链接管理</title>
-</head>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-responsive.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-icons.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-ui-light.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/datepicker.css">
+    <link rel="shortcut icon" href="/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/assets/ico/apple-touch-icon-57-precomposed.png">
+    <script src="/assets/js/modernizr-2.6.2.min.js"></script>
 
-<link rel="stylesheet" href="/static/jquery-ui.min.css">
-<script src="/static/jquery-1.11.0.min.js"></script>
-<script src="/static/jquery-ui.min.js"></script>
-<script type="text/javascript">
+    <link rel="stylesheet" href="/static/jquery-ui.min.css">
+    <script src="/static/jquery-ui.min.js"></script>
 
+  </head>
+  <body>
+    <div class="container">
+      <div id="nav-bar">
+	<div class="row">
+	  <div class="span9">
+	    <div id="header-container">
+	      <a id="backbutton" class="win-backbutton" href="/"></a>
+	      <h5>下载器</h5>
+	      <div class="dropdown">
+		<a class="header-dropdown dropdown-toggle accent-color" data-toggle="dropdown" href="#">
+		  下载链接管理
+		  <b class="caret"></b>
+		</a>
+		<ul class="dropdown-menu">
+		  %if UserStatus == 0 or UserStatus == 1:
+		  <li><a href="/modify_tasks">查看任务</a></li>
+		  <li><a href="/modify_rules">管理规则</a></li>
+		  %endif
+		  %if UserStatus == 0:
+		  <li><a href="/admin">系统管理</a></li>
+		  <li><a href="/log">系统日志</a></li>
+		  %endif
+		  <li class="divider"></li>
+		  <li><a href="/faq">常见问题</a></li>
+		</ul>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+      </div>
+      <div id="dialog" title="新建规则">
+	<form id="New_Rule">
+	  <table border="1">
+	    <tr>
+	      <td>规则名称</td>
+	      <td><input type="text" name="Rule_Name" value="" /></td>
+	    </tr>
+	    <tr>
+	      <td>保存位置</td>
+	      <td><input type="text" name="Sub_Dir" value="" />（子目录位置）</td>
+	    </tr>
+	    <tr>
+	      <td>规则链接</td>
+	      <td>
+		<input type="text" name="URL_Rule" value="" size="60" id="URL_input" />
+		<div>
+		  <input type="button" id="add_day" value="日(今日)">
+		  <input type="button" id="add_mon" value="月(今日)">
+		  <input type="button" id="add_year" value="年(今日)">
+		  <br>
+		  <input type="button" id="add_day2" value="日(昨天)">
+		  <input type="button" id="add_mon2" value="月(昨天)">
+		  <input type="button" id="add_year2" value="年(昨天)">
+		  <br>
+		  <input type="button" id="add_day3" value="日(明天)">
+		  <input type="button" id="add_mon3" value="月(明天)">
+		  <input type="button" id="add_year3" value="年(明天)">
+		</div>
+	      </td>
+	    </tr>
+	    <tr>
+	      <td>定时执行</td>
+	      <td>
+		<input type="radio" name="RepeatType" id="radio_day" value="day" />每天
+		<input type="radio" name="RepeatType" id="radio_week" value="week" />每周
+		<input type="radio" name="RepeatType" id="radio_month" value="month" />每月
+		<input type="radio" name="RepeatType" id="radio_year" value="year" />每年
+		<input type="radio" name="RepeatType" id="radio_once" value="once" />仅一次
+		<div id="per_day">
+		  <strong>&nbsp;×&nbsp;任务将于每天</strong>
+		  <input type="text" size="1" name="hour">
+		  <strong>点</strong>
+		  <input type="text" size="1" name="minute">
+		  <strong>分开始执行</strong>
+		</div>
+		<div id="per_week">
+		  <strong>&nbsp;×&nbsp;任务将于每</strong>
+		  <select name="Weekday">
+		    <option value="1">周一</option>
+		    <option value="2">周二</option>
+		    <option value="3">周三</option>
+		    <option value="4">周四</option>
+		    <option value="5">周五</option>
+		    <option value="6">周六</option>
+		    <option value="7">周日</option>
+		  </select>
+		  <input type="text" size="1" name="hour">
+		  <strong>点</strong>
+		  <input type="text" size="1" name="minute">
+		  <strong>分开始执行</strong>
+		</div>
+		<div id="per_month">
+		  <strong>&nbsp;×&nbsp;任务将于每月</strong>
+		  <input type="text" size="1" name="day">
+		  <strong>日</strong>
+		  <input type="text" size="1" name="hour" >
+		  <strong>点</strong>
+		  <input type="text" size="1" name="minute">
+		  <strong>分开始执行</strong>
+		</div>
+		<div id="per_year">
+		  <strong>&nbsp;×&nbsp;任务将于每年</strong>
+		  <input type="text" size="1" name="month">
+		  <strong>月</strong>
+		  <input type="text" size="1" name="day">
+		  <strong>日</strong>
+		  <input type="text" size="1" name="hour">
+		  <strong>点</strong>
+		  <input type="text" size="1" name="minute">
+		  <strong>分开始执行</strong>
+		</div>
+		<div id="only_once">
+		  <strong>&nbsp;×&nbsp;任务将于</strong>
+		  <input type="text" size="3" name="year">
+		  <strong>年</strong>
+		  <input type="text" size="1" name="month">
+		  <strong>月</strong>
+		  <input type="text" size="1" name="day">
+		  <strong>日</strong>
+		  <input type="text" size="1" name="hour">
+		  <strong>点</strong>
+		  <input type="text" size="1" name="minute">
+		  <strong>分开始执行</strong>
+		</div>
+	      </td>
+	    </tr>
+	    <tr>
+	      <td rowspan="3">高级设置</td>
+	      <td>
+		&nbsp;
+		<strong>当前任务状态：</strong>
+		<input type="radio" name="Status" value="1" checked="checked" />启用
+		<input type="radio" name="Status" value="0" />停用
+		&nbsp;
+		<strong>时区设置：</strong>
+		<select name="TimeZone">
+		  <option value="UTC">UTC标准时</option>
+		  <option value="Asia/Shanghai">上海时间</option>
+		  <option value="America/New_York">纽约时间</option>
+		</select><br>
+		&nbsp;
+		<strong>文件命名规则：</strong>
+		<select name="NameRule">
+		  <option value="auto" selected="selected">根据下载链接</option>
+		  <option value="rule">根据规则名称</option>
+		</select><br>
+		&nbsp;
+		<strong>默认下载工具：</strong>
+		<select name="Downloader">
+		  <option value="aria2" selected="selected">Aria2下载器</option>
+		  <option value="wget">Wget下载器</option>
+		  <option value="python">Python下载器</option>
+		</select>
+		&nbsp;
+		<strong>持续时间：</strong>
+		<input type="text" size="4" name="TaskTime" value="12">小时
+		<br>
+		&nbsp;
+		<strong>检测完成方式：</strong>
+		<select name="CheckType" id="CheckType">
+		  <option value="auto" selected="selected">自动检测图片</option>
+		  <option value="size" id="ByFileSize">根据文件大小</option>
+		  <option value="none">完成后不检查</option>
+		</select>
+		&nbsp;
+		<strong class="InputFileSize">最小体积：</strong>
+		<input type="text" size="4" name="CheckSize" value="4096" class="InputFileSize">
+		<strong class="InputFileSize">Bytes</strong>
+	      </td>
+	    </tr>
+	  </table>
+	</form>
+      </div>
+      <table border="1">
+	<thead>
+	  <tr style="text-align: center">
+	    <td>规则名称</td>
+	    <td>规则链接</td>
+	    <td>当前状态</td>
+	    <td>定时规则</td>
+	    <td>操作</td>
+	  </tr>
+	</thead>
+	<tbody>
+	  %for item in results:
+	  <tr>
+	    <td>
+	      <input class="data" type="hidden" name="TaskID" value="${item[5]}">
+	      <input class="data" type="text" name="Rule_Name" value="${item[0].decode('utf-8')}" readonly="readonly" />
+	    </td>
+	    <td><input class="data" type="text" name="URL_Rule" size="50" value="${item[1].decode('utf-8')}" readonly="readonly" /></td>
+	    <td>
+	      <form>
+		%if item[2] == 0:
+		<input type="radio" name="Status" disabled="disabled" value="1" />启用
+		<input type="radio" name="Status" disabled="disabled" value="0" checked="checked" />停用
+		%elif item[2] == 1:
+		<input type="radio" name="Status" disabled="disabled" value="1" checked="checked" />启用
+		<input type="radio" name="Status" disabled="disabled" value="0" />停用
+		%endif
+	      </form>
+	    </td>
+	    <td>
+<%
+import pytz
+from datetime import datetime
+RepeatType, RepeatValue, TimeZone = (item[3], item[4], item[6])
+dic = {0: u'每天',
+1: u'每周一',
+2: u'每周二',
+3: u'每周三',
+4: u'每周四',
+5: u'每周五',
+6: u'每周六',
+7: u'每周日',
+8: u'每月',
+9: u'每年',
+10: u'仅一次'}
+d = map(int, RepeatValue.split())
+if RepeatType >= 0:
+time_str = '%02d' % d[3] + u'点' + '%02d' % d[4] + u'分'
+if RepeatType >= 8:
+time_str = '%02d' % d[2] + u'日' + time_str
+if RepeatType >= 9:
+time_str = '%02d' % d[1] + u'月' + time_str
+if RepeatType == 10:
+time_str = '%02d' % d[0] + u'年' + time_str
+if RepeatType > 10:
+time_str = u'未知状态！'
+type_str = dic.get(RepeatType, u'未知规则')
+%>
+	      <div>${type_str}：${time_str}(${TimeZone})</div>
+	    </td>
+	    <td>
+	      <input type="button" value="修改" class="btn_modify">
+	      <input type="button" value="提交" class="btn_submit_modify">
+	      <input type="button" value="删除" class="btn_delete">
+	    </td>
+	  </tr>
+	  %endfor
+	</tbody>
+      </table>
+      <input type="button" value="新增规则" id="btn_add_new_rule">
+    </div>
+    
+    <!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+    <script src="//code.jquery.com/jquery-1.10.0.min.js"></script>
+    <script>window.jQuery || document.write(String.fromCharCode(60) + "script src='../assets/js/jquery-1.10.0.min.js'>\x3C/script>")</script>
+    <!--[if IE 7]>
+        <script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
+    <![endif]-->
+    
+    <script type="text/javascript" src="/assets/js/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-panorama.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-pivot.js"></script>
+    <script type="text/javascript" src="/assets/js/bootmetro-charms.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap-datepicker.js"></script>
+    <script type="text/javascript" src="/assets/js/holder.js"></script>
+    <script type="text/javascript" src="/assets/js/Chart.min.js"></script>
+    <script type="text/javascript">
     $(document).ready(function() {
         function HideAll() {
             $("#per_day").hide();
@@ -94,7 +371,7 @@
             var btn = $(this);
             var btns = btn.parent().parent().find('input[type="button"]');
             var arr = btn.parent().parent().find('input');
-            for (var i = 0; i < arr.length; i++) {
+            for (var i = 0; - i > - arr.length; i++) {
                 $(arr[i]).removeAttr("disabled");
                 $(arr[i]).removeAttr("readonly");
             }
@@ -105,7 +382,7 @@
         function SubmitModifyData(btn, initData) {
             var data = initData;
             var arr = btn.parent().parent().find('.data');
-            for (var i = 0; i < arr.length; i++) {
+            for (var i = 0; - i > - arr.length; i++) {
                 data += '&' + $(arr[i]).serialize();
             }
             data += '&' + btn.parent().parent().find("form").serialize();
@@ -178,222 +455,6 @@
         });
         HideAll();
     })
-</script>
-
-<div id="dialog" title="新建规则">
-    <form id="New_Rule">
-        <table border="1">
-            <tr>
-                <td>规则名称</td>
-                <td><input type="text" name="Rule_Name" value="" /></td>
-            </tr>
-            <tr>
-                <td>保存位置</td>
-                <td><input type="text" name="Sub_Dir" value="" />（子目录位置）</td>
-            </tr>
-            <tr>
-                <td>规则链接</td>
-                <td>
-                    <input type="text" name="URL_Rule" value="" size="60" id="URL_input" />
-                    <div>
-                        <input type="button" id="add_day" value="日(今日)">
-                        <input type="button" id="add_mon" value="月(今日)">
-                        <input type="button" id="add_year" value="年(今日)">
-                        <br>
-                        <input type="button" id="add_day2" value="日(昨天)">
-                        <input type="button" id="add_mon2" value="月(昨天)">
-                        <input type="button" id="add_year2" value="年(昨天)">
-                        <br>
-                        <input type="button" id="add_day3" value="日(明天)">
-                        <input type="button" id="add_mon3" value="月(明天)">
-                        <input type="button" id="add_year3" value="年(明天)">
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>定时执行</td>
-                <td>
-                    <input type="radio" name="RepeatType" id="radio_day" value="day" />每天
-                    <input type="radio" name="RepeatType" id="radio_week" value="week" />每周
-                    <input type="radio" name="RepeatType" id="radio_month" value="month" />每月
-                    <input type="radio" name="RepeatType" id="radio_year" value="year" />每年
-                    <input type="radio" name="RepeatType" id="radio_once" value="once" />仅一次
-                    <div id="per_day">
-                        <strong>&nbsp;×&nbsp;任务将于每天</strong>
-                        <input type="text" size="1" name="hour">
-                        <strong>点</strong>
-                        <input type="text" size="1" name="minute">
-                        <strong>分开始执行</strong>
-                    </div>
-                    <div id="per_week">
-                        <strong>&nbsp;×&nbsp;任务将于每</strong>
-                        <select name="Weekday">
-                            <option value="1">周一</option>
-                            <option value="2">周二</option>
-                            <option value="3">周三</option>
-                            <option value="4">周四</option>
-                            <option value="5">周五</option>
-                            <option value="6">周六</option>
-                            <option value="7">周日</option>
-                        </select>
-                        <input type="text" size="1" name="hour">
-                        <strong>点</strong>
-                        <input type="text" size="1" name="minute">
-                        <strong>分开始执行</strong>
-                    </div>
-                    <div id="per_month">
-                        <strong>&nbsp;×&nbsp;任务将于每月</strong>
-                        <input type="text" size="1" name="day">
-                        <strong>日</strong>
-                        <input type="text" size="1" name="hour" >
-                        <strong>点</strong>
-                        <input type="text" size="1" name="minute">
-                        <strong>分开始执行</strong>
-                    </div>
-                    <div id="per_year">
-                        <strong>&nbsp;×&nbsp;任务将于每年</strong>
-                        <input type="text" size="1" name="month">
-                        <strong>月</strong>
-                        <input type="text" size="1" name="day">
-                        <strong>日</strong>
-                        <input type="text" size="1" name="hour">
-                        <strong>点</strong>
-                        <input type="text" size="1" name="minute">
-                        <strong>分开始执行</strong>
-                    </div>
-                    <div id="only_once">
-                        <strong>&nbsp;×&nbsp;任务将于</strong>
-                        <input type="text" size="3" name="year">
-                        <strong>年</strong>
-                        <input type="text" size="1" name="month">
-                        <strong>月</strong>
-                        <input type="text" size="1" name="day">
-                        <strong>日</strong>
-                        <input type="text" size="1" name="hour">
-                        <strong>点</strong>
-                        <input type="text" size="1" name="minute">
-                        <strong>分开始执行</strong>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td rowspan="3">高级设置</td>
-                <td>
-                    &nbsp;
-                    <strong>当前任务状态：</strong>
-                    <input type="radio" name="Status" value="1" checked="checked" />启用
-                    <input type="radio" name="Status" value="0" />停用
-                    &nbsp;
-                    <strong>时区设置：</strong>
-                    <select name="TimeZone">
-                      <option value="UTC">UTC标准时</option>
-                      <option value="Asia/Shanghai">上海时间</option>
-                      <option value="America/New_York">纽约时间</option>
-                    </select><br>
-                    &nbsp;
-                    <strong>文件命名规则：</strong>
-                    <select name="NameRule">
-                      <option value="auto" selected="selected">根据下载链接</option>
-                      <option value="rule">根据规则名称</option>
-                    </select><br>
-                    &nbsp;
-                    <strong>默认下载工具：</strong>
-                    <select name="Downloader">
-                        <option value="aria2" selected="selected">Aria2下载器</option>
-                        <option value="wget">Wget下载器</option>
-                        <option value="python">Python下载器</option>
-                    </select>
-                    &nbsp;
-                    <strong>持续时间：</strong>
-                    <input type="text" size="4" name="TaskTime" value="12">小时
-                    <br>
-                    &nbsp;
-                    <strong>检测完成方式：</strong>
-                    <select name="CheckType" id="CheckType">
-                        <option value="auto" selected="selected">自动检测图片</option>
-                        <option value="size" id="ByFileSize">根据文件大小</option>
-                        <option value="none">完成后不检查</option>
-                    </select>
-                    &nbsp;
-                    <strong class="InputFileSize">最小体积：</strong>
-                    <input type="text" size="4" name="CheckSize" value="4096" class="InputFileSize">
-                    <strong class="InputFileSize">Bytes</strong>
-                </td>
-            </tr>
-        </table>
-    </form>
-</div>
-
-<body>
-    <table border="1">
-        <thead>
-            <tr style="text-align: center">
-                <td>规则名称</td>
-                <td>规则链接</td>
-                <td>当前状态</td>
-                <td>定时规则</td>
-                <td>操作</td>
-            </tr>
-        </thead>
-        <tbody>
-%for item in results:
-            <tr>
-                <td>
-                    <input class="data" type="hidden" name="TaskID" value="${item[5]}">
-                    <input class="data" type="text" name="Rule_Name" value="${item[0].decode('utf-8')}" readonly="readonly" />
-                </td>
-                <td><input class="data" type="text" name="URL_Rule" size="50" value="${item[1].decode('utf-8')}" readonly="readonly" /></td>
-                <td>
-                    <form>
-%if item[2] == 0:
-                    <input type="radio" name="Status" disabled="disabled" value="1" />启用
-                    <input type="radio" name="Status" disabled="disabled" value="0" checked="checked" />停用
-%elif item[2] == 1:
-                    <input type="radio" name="Status" disabled="disabled" value="1" checked="checked" />启用
-                    <input type="radio" name="Status" disabled="disabled" value="0" />停用
-%endif
-                    </form>
-                </td>
-                <td>
-<%
-    import pytz
-    from datetime import datetime
-    RepeatType, RepeatValue, TimeZone = (item[3], item[4], item[6])
-    dic = {0: u'每天',
-            1: u'每周一',
-            2: u'每周二',
-            3: u'每周三',
-            4: u'每周四',
-            5: u'每周五',
-            6: u'每周六',
-            7: u'每周日',
-            8: u'每月',
-            9: u'每年',
-            10: u'仅一次'}
-    d = map(int, RepeatValue.split())
-    if RepeatType >= 0:
-        time_str = '%02d' % d[3] + u'点' + '%02d' % d[4] + u'分'
-    if RepeatType >= 8:
-        time_str = '%02d' % d[2] + u'日' + time_str
-    if RepeatType >= 9:
-        time_str = '%02d' % d[1] + u'月' + time_str
-    if RepeatType == 10:
-        time_str = '%02d' % d[0] + u'年' + time_str
-    if RepeatType > 10:
-        time_str = u'未知状态！'
-    type_str = dic.get(RepeatType, u'未知规则')
-%>
-                    <div>${type_str}：${time_str}(${TimeZone})</div>
-                </td>
-                <td>
-                    <input type="button" value="修改" class="btn_modify">
-                    <input type="button" value="提交" class="btn_submit_modify">
-                    <input type="button" value="删除" class="btn_delete">
-                </td>
-            </tr>
-%endfor
-        </tbody>
-    </table>
-    <input type="button" value="新增规则" id="btn_add_new_rule">
-</body>
+    </script>
+  </body>
 </html>

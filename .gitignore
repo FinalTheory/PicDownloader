@@ -106,7 +106,6 @@ $RECYCLE.BIN/
 
 *.txt
 *.bak
-jquery*.*
 aria2*
 wget*
 PythonEnv/

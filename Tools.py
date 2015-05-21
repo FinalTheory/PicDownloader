@@ -122,9 +122,14 @@ class ConfigLoader():
             exit(-1)
 
     def read(self, key):
-        return self.system.get(key)
+        result = self.system.get(key)
+        if type(result) == str:
+            result = result.decode('gb18030')
+        return result
 
     def write(self, key, value):
+        if type(value) == unicode:
+            value = value.encode('gb18030')
         self.system[key] = value
         self.config.set('system', key, value)
         self.config.write(open(cfg_name, "w"))
@@ -141,7 +146,9 @@ class LogManager:
             # 自动加上换行
             if msg[-1] != '\n':
                 msg += '\n'
-            fid.write(msg.decode('gb18030'))
+            if type(msg) == unicode:
+                msg = msg.encode('gb18030')
+            fid.write(msg)
         self.mutex.release()
 
 

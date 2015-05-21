@@ -84,12 +84,18 @@ class Aria2Downloader(BasicDownloader):
             sleep(random()+1)
             # 然后将下载的命令行写入对应文件
             with open(Location, 'w') as fid:
-                fid.write(' '.join(cmd))
+                data = ' '.join(cmd)
+                if type(data) == unicode:
+                    data = data.encode('gb18030')
+                fid.write(data)
         else:
+            cmd = ' '.join(cmd)
+            if type(cmd) == unicode:
+                cmd = cmd.encode('gb18030')
             try:
-                call(cmd)
+                call(cmd, shell=True)
             except Exception:
-                log.log_message(u"[ERROR] '%s' execution failed!" % ' '.join(cmd))
+                log.log_message(u"[ERROR] '%s' execution failed!" % cmd)
 
 
 class WgetDownloader(BasicDownloader):
@@ -103,12 +109,18 @@ class WgetDownloader(BasicDownloader):
             sleep(random()+1)
             # 然后将下载的命令行写入对应文件
             with open(Location, 'w') as fid:
-                fid.write(' '.join(cmd))
+                data = ' '.join(cmd)
+                if type(data) == unicode:
+                    data = data.encode('gb18030')
+                fid.write(data)
         else:
+            cmd = ' '.join(cmd)
+            if type(cmd) == unicode:
+                cmd = cmd.encode('gb18030')
             try:
-                call(cmd)
+                call(cmd, shell=True)
             except Exception:
-                log.log_message(u"[ERROR] '%s' execution failed!" % ' '.join(cmd))
+                log.log_message(u"[ERROR] '%s' execution failed!" % cmd)
 
 
 class PythonDownloader(BasicDownloader):
@@ -119,7 +131,10 @@ class PythonDownloader(BasicDownloader):
             sleep(random()+1)
             # 然后将下载的命令行写入对应文件
             with open(Location, 'w') as fid:
-                fid.write(u'urlretrieve "%s" to "%s"' % (URL, Location))
+                data = ' '.join(u'urlretrieve "%s" to "%s"' % (URL, Location))
+                if type(data) == unicode:
+                    data = data.encode('gb18030')
+                fid.write(data)
         else:
             try:
                 urlretrieve(URL, Location)

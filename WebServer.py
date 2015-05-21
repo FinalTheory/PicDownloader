@@ -179,7 +179,7 @@ class ModifyRules():
                 sql = "SELECT Rule_Name, URL_Rule, Status, RepeatType, RepeatValue, TaskID, TimeZone " \
                       "FROM UserTask WHERE UID='%s'" % UserInfo['UID']
             results = db.Query(sql)
-            return MyTemplate.render(results=results)
+            return MyTemplate.render(results=results, **UserInfo)
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 
@@ -315,7 +315,7 @@ class Settings():
                   "FROM Users WHERE UID='%s'" % UserInfo['UID']
             result = db.QueryFirst(sql)
             MyTemplate = CreateMyTemplate('Settings.html')
-            return MyTemplate.render(SiteName=cfg.read('site_name'), UserInfo=result)
+            return MyTemplate.render(SiteName=cfg.read('site_name'), UserInfo=result, **UserInfo)
         else:
             web.seeother('/login')
 
@@ -370,6 +370,7 @@ class Admin():
                 PortName=cfg.read('port_name'),
                 MaxThreads=cfg.read('max_threads'),
                 MaxBuf=cfg.read('max_buf'),
+                **UserInfo
             )
         else:
             return Notice(u'禁止访问',  u'非管理员无权操作！', '/index')
@@ -492,7 +493,7 @@ class ModifyTasks():
             else:
                 sql = "SELECT * FROM `CurrentTask` WHERE `UID` = '%s'" % UserInfo['UID']
             results = db.Query(sql)
-            return MyTemplate.render(CurrentTask=results)
+            return MyTemplate.render(CurrentTask=results, **UserInfo)
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 

@@ -1,201 +1,223 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width">
-    
+
     <title>系统管理</title>
-    
+
     <meta name="robots" content="noindex, nofollow">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro.css">
-    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-responsive.css">
-    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-icons.css">
-    <link rel="stylesheet" type="text/css" href="/assets/css/bootmetro-ui-light.css">
-    <link rel="stylesheet" type="text/css" href="/assets/css/datepicker.css">
-    <link rel="shortcut icon" href="/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="/assets/ico/apple-touch-icon-57-precomposed.png">
-    <script src="/assets/js/modernizr-2.6.2.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-responsive.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-icons.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-ui-light.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/datepicker.css">
+    <link rel="shortcut icon" href="static/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144"
+          href="static/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114"
+          href="static/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="static/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="static/assets/ico/apple-touch-icon-57-precomposed.png">
+    <script src="static/assets/js/modernizr-2.6.2.min.js"></script>
     <style>
-html,
-body {
-   position: relative;
-   background-color: #f2f0e4;
-   background: transparent url(/assets/img/bkg-4.png) repeat 0 0;
-   color: #847d6b;
-}
+        html,
+        body {
+            position: relative;
+            background-color: #f2f0e4;
+            background: transparent url(static/assets/img/bkg-win8.jpg) repeat 0 0;
+            color: white;
+        }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <div id="nav-bar">
-	<div class="row">
-	  <div class="span9">
-	    <div id="header-container">
-	      <a id="backbutton" class="win-backbutton" href="/"></a>
-	      <h5>下载器</h5>
-	      <div class="dropdown">
-		<a class="header-dropdown dropdown-toggle accent-color" data-toggle="dropdown" href="#">
-		  系统管理
-		  <b class="caret"></b>
-		</a>
-		<ul class="dropdown-menu">
-		  %if UserStatus == 0 or UserStatus == 1:
-		  <li><a href="/modify_tasks">查看任务</a></li>
-		  <li><a href="/modify_rules">管理规则</a></li>
-		  %endif
-		  %if UserStatus == 0:
-		  <li><a href="/admin">系统管理</a></li>
-		  <li><a href="/log">系统日志</a></li>
-		  %endif
-		  <li class="divider"></li>
-		  <li><a href="/faq">常见问题</a></li>
-		</ul>
-	      </div>
-	    </div>
-	  </div>
-	</div>
-      </div>
-      <div class="page-header">
-	<h2>全局设置 <small>改改改</small></h2>
-      </div>
-      <form class="form-horizontal" id="config" method="POST" action="/admin">
-	<fieldset>
-	  <legend>常用设置</legend>
-	  <div class="control-group">
-	    <label class="control-label" for="sitename">网站名称</label>
-	    <div class="controls">
-	      <input type="text" id="sitename" name="SiteName" value="${SiteName.decode('gb18030')}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="globalpos">数据存储位置</label>
-	    <div class="controls">
-	      <input type="text" id="globalpos" name="GlobalPos" value="${GlobalPos.decode('gb18030')}">
-	    </div>
-	  </div>
-	  <legend>以下是高级设置选项</legend>
-	  <div class="control-group">
-	    <label class="control-label" for="portname">监听端口 (重启后生效)</label>
-	    <div class="controls">
-	      <input type="text" id="portname" name="PortName" value="${PortName}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="datecheckinginterval">日期变动检测间隔 (s)</label>
-	    <div class="controls">
-	      <input type="text" id="datecheckinginterval" name="SiteName" value="${DateCheckingInterval}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="workercheckinginterval">下载任务增加间隔 (s)</label>
-	    <div class="controls">
-	      <input type="text" id="workercheckinginterval" name="WorkerCheckingInterval" value="${WorkerCheckingInterval}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="cleanercheckinginterval">磁盘配额检测间隔 (s)</label>
-	    <div class="controls">
-	      <input type="text" id="cleanercheckinginterval" name="CleanerCheckingInterval" value="${CleanerCheckingInterval}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="maxthreads">下载线程数</label>
-	    <div class="controls">
-	      <input type="text" id="maxthreads" name="MaxThreads" value="${MaxThreads}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <label class="control-label" for="maxbuf">下载缓冲区容量</label>
-	    <div class="controls">
-	      <input type="text" id="maxbuf" name="MaxBuf" value="${MaxBuf}">
-	    </div>
-	  </div>
-	  <div class="control-group">
-	    <div class="controls">
-	      <input type="button" value="提交" class="btn btn-primary" id="btn_config">
-	    </div>
-	  </div>
-	</fieldset>
-      </form>
+</head>
+<body>
+<div class="container">
+    <div id="nav-bar">
+        <div class="row">
+            <div class="span9">
+                <div id="header-container">
+                    <a id="backbutton" class="win-backbutton" href="/"></a>
+                    <h5>下载器</h5>
 
-      <div class="page-header">
-	<h2>用户管理 <small>管管管</small></h2>
-      </div>
-      <form method="POST" action="/admin">
-	<fieldset>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <td>学号/工号</td>
-                <td>姓名</td>
-                <td>密码</td>
-                <td>文件数限额</td>
-                <td>磁盘空间限额</td>
-                <td>操作</td>
-              </tr>
-            </thead>
-	    %for user in AllUserData:
-            <tr>
-	      <td>
-		<input type="text" name="UID" value="${user[0].decode('utf-8')}" readonly="readonly">
-	      </td>
-	      <td>
-		<input type="text" name="UserName" value="${user[1].decode('utf-8')}" readonly="readonly" class="dat">
-	      </td>
-	      <td>
-		<input type="text" name="PassWord" value="${user[2].decode('utf-8')}" readonly="readonly" class="dat">
-	      </td>
-	      <td>
-		<input type="text" name="MaxFiles" value="${user[3]}" readonly="readonly" class="dat">
-	      </td>
-	      <td>
-		<input type="text" name="MaxSize" value="${user[4]}" readonly="readonly" class="dat">
-	      </td>
-	      <td>
-                <input type="button" value="修改" id="btn_modify" class="btn btn-info btn-mini">
-		<input type="button" value="更新" id="btn_submit_modify" class="btn btn-primary btn-mini">
-		<input type="button" value="删除" id="btn_delete" class="btn btn-danger btn-mini">
-              </td>
-            </tr>
-	    %endfor
-          </table>
-	</fieldset>
-      </form>
+                    <div class="dropdown">
+                        <a class="header-dropdown dropdown-toggle accent-color" data-toggle="dropdown" href="#">
+                            系统管理
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+%if UserStatus == 0 or UserStatus == 1:
+                            <li><a href="/modify_tasks">查看任务</a></li>
+                            <li><a href="/modify_rules">管理规则</a></li>
+                            <li><a href="/settings">个人设置</a></li>
+%endif
+%if UserStatus == 0:
+                            <li><a href="/admin">系统管理</a></li>
+                            <li><a href="/log">系统日志</a></li>
+%endif
+                            <li class="divider"></li>
+                            <li><a href="/faq">常见问题</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    
-    <!-- Grab Google CDN's jQuery. fall back to local if necessary -->
-    <script src="//code.jquery.com/jquery-1.10.0.min.js"></script>
-    <script>window.jQuery || document.write(String.fromCharCode(60) + "script src='../assets/js/jquery-1.10.0.min.js'>\x3C/script>")</script>
-    <!--[if IE 7]>
-        <script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
-    <![endif]-->
-    
-    <script type="text/javascript" src="/assets/js/google-code-prettify/prettify.js"></script>
-    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/assets/js/bootmetro-panorama.js"></script>
-    <script type="text/javascript" src="/assets/js/bootmetro-pivot.js"></script>
-    <script type="text/javascript" src="/assets/js/bootmetro-charms.js"></script>
-    <script type="text/javascript" src="/assets/js/bootstrap-datepicker.js"></script>
-    <script type="text/javascript" src="/assets/js/holder.js"></script>
-    <script type="text/javascript" src="/assets/js/Chart.min.js"></script>
-    <script type="text/javascript">
-    $(document).ready(function() {
-        $("#btn_config").click(function() {
+    <div class="page-header">
+        <h2>全局设置
+            <small>改改改</small>
+        </h2>
+    </div>
+    <form class="form-horizontal" id="config" method="POST" action="/admin">
+        <fieldset>
+            <input type="hidden" name="action" value="config">
+            <legend>常用设置</legend>
+            <div class="control-group">
+                <label class="control-label" for="sitename">网站名称</label>
+
+                <div class="controls">
+                    <input type="text" id="sitename" name="SiteName" value="${SiteName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="globalpos">数据存储位置</label>
+
+                <div class="controls">
+                    <input type="text" id="globalpos" name="GlobalPos" value="${GlobalPos}">
+                </div>
+            </div>
+            <legend>以下是高级设置选项</legend>
+            <div class="control-group">
+                <label class="control-label" for="portname">监听端口 (重启后生效)</label>
+
+                <div class="controls">
+                    <input type="text" id="portname" name="PortName" value="${PortName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="datecheckinginterval">日期变动检测间隔 (s)</label>
+
+                <div class="controls">
+                    <input type="text" id="datecheckinginterval" name="DateCheckingInterval"
+                           value="${DateCheckingInterval}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="workercheckinginterval">下载任务增加间隔 (s)</label>
+
+                <div class="controls">
+                    <input type="text" id="workercheckinginterval" name="WorkerCheckingInterval"
+                           value="${WorkerCheckingInterval}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="cleanercheckinginterval">磁盘配额检测间隔 (s)</label>
+
+                <div class="controls">
+                    <input type="text" id="cleanercheckinginterval" name="CleanerCheckingInterval"
+                           value="${CleanerCheckingInterval}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="maxthreads">下载线程数</label>
+
+                <div class="controls">
+                    <input type="text" id="maxthreads" name="MaxThreads" value="${MaxThreads}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="maxbuf">下载缓冲区容量</label>
+
+                <div class="controls">
+                    <input type="text" id="maxbuf" name="MaxBuf" value="${MaxBuf}">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <input type="button" value="提交" class="btn btn-primary" id="btn_config">
+                </div>
+            </div>
+        </fieldset>
+    </form>
+
+    <div class="page-header">
+        <h2>用户管理
+            <small>管管管</small>
+        </h2>
+    </div>
+    <form method="POST" action="/admin">
+        <fieldset>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <td>学号/工号</td>
+                    <td>姓名</td>
+                    <td>密码</td>
+                    <td>文件数限额</td>
+                    <td>磁盘空间限额</td>
+                    <td>操作</td>
+                </tr>
+                </thead>
+                %for user in AllUserData:
+                <tr>
+                    <td>
+                        <input type="text" name="UID" value="${user[0].decode('utf-8')}" readonly="readonly">
+                    </td>
+                    <td>
+                        <input type="text" name="UserName" value="${user[1].decode('utf-8')}" readonly="readonly"
+                               class="dat">
+                    </td>
+                    <td>
+                        <input type="text" name="PassWord" value="${user[2].decode('utf-8')}" readonly="readonly"
+                               class="dat">
+                    </td>
+                    <td>
+                        <input type="text" name="MaxFiles" value="${user[3]}" readonly="readonly" class="dat">
+                    </td>
+                    <td>
+                        <input type="text" name="MaxSize" value="${user[4]}" readonly="readonly" class="dat">
+                    </td>
+                    <td>
+                        <input type="button" value="修改" id="btn_modify" class="btn btn-info btn-mini">
+                        <input type="button" value="更新" id="btn_submit_modify" class="btn btn-primary btn-mini">
+                        <input type="button" value="删除" id="btn_delete" class="btn btn-danger btn-mini">
+                    </td>
+                </tr>
+                %endfor
+            </table>
+        </fieldset>
+    </form>
+</div>
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="static/assets/js/jquery-1.11.0.min.js"></script>
+<script>window.jQuery || document.write(String.fromCharCode(60) + "script src='static/assets/js/jquery-1.11.0.min.js'>\x3C/script>")</script>
+<!--[if IE 7]>
+<script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
+<![endif]-->
+
+<script type="text/javascript" src="static/assets/js/google-code-prettify/prettify.js"></script>
+<script type="text/javascript" src="static/assets/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-panorama.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-pivot.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-charms.js"></script>
+<script type="text/javascript" src="static/assets/js/bootstrap-datepicker.js"></script>
+<script type="text/javascript" src="static/assets/js/holder.js"></script>
+<script type="text/javascript" src="static/assets/js/Chart.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#btn_config").click(function () {
             var data = $("#config").serialize();
-            if ( confirm("确认修改设置吗？") ) {
+            if (confirm("确认修改设置吗？")) {
                 $.post(
                         '/admin',
                         data,
-                        function(data) {
+                        function (data) {
                             var js_data = JSON.parse(data);
                             alert(js_data.msg);
-                            if ( js_data.status != 200 ) {
+                            if (js_data.status != 200) {
                                 // 如果操作不成功，自动刷新页面
                                 location.reload();
                             }
@@ -206,7 +228,7 @@ body {
             }
         });
         // 解锁修改功能
-        $("#btn_modify").click(function() {
+        $("#btn_modify").click(function () {
             var btn = $(this);
             var btns = btn.parent().parent().find('input[type="button"]');
             var arr = btn.parent().parent().find('input[class="dat"]');
@@ -223,11 +245,11 @@ body {
             for (var i = 0; i < arr.length; i++) {
                 data += '&' + $(arr[i]).serialize();
             }
-            if ( confirm("确认提交该操作吗？") ) {
+            if (confirm("确认提交该操作吗？")) {
                 $.post(
                         '/admin',
                         data,
-                        function(data) {
+                        function (data) {
                             alert((JSON.parse(data)).msg);
                             location.reload();
                         }
@@ -236,16 +258,17 @@ body {
                 console.log(data);
             }
         }
+
         // 提交修改的按钮
-        $("#btn_submit_modify").click(function() {
+        $("#btn_submit_modify").click(function () {
             SubmitModifyData($(this), "action=modify");
         });
         // 删除对应规则的按钮
-        $("#btn_delete").click(function() {
+        $("#btn_delete").click(function () {
             SubmitModifyData($(this), "action=delete");
         });
         $("#btn_submit_modify").hide();
     });
-    </script>
-  </body>
+</script>
+</body>
 </html>

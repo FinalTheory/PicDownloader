@@ -25,6 +25,7 @@ class DownloadServer():
             int(cfg.read('max_buf')),
         )
         # 注意先清空先前留下的下载任务
+        # TODO: 改为继续执行先前未完成的任务
         db.Execute("DELETE FROM `CurrentTask`")
 
     def start(self):

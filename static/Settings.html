@@ -71,7 +71,7 @@
         </h2>
     </div>
 
-    <form method="POST" action="/register" class="form-horizontal">
+    <form method="POST" action="/settings" class="form-horizontal">
         <div class="control-group">
             <label class="control-label" for="UserName">姓名</label>
 
@@ -192,12 +192,15 @@
         $("form").submit(function (e) {
             var passwd1 = $("#passwd1").val();
             var passwd2 = $("#passwd2").val();
-            if (passwd1 != passwd2) {
-                e.preventDefault();
-                alert("两次输入的密码不一致，请重新输入！");
-            } else if (passwd1.length < 6) {
-                e.preventDefault();
-                alert("密码长度太短！");
+            // 如果是要修改密码
+            if ( passwd1.length + passwd2.length > 0 ) {
+                if (passwd1 != passwd2) {
+                    e.preventDefault();
+                    alert("两次输入的密码不一致，请重新输入！");
+                } else if (passwd1.length < 6) {
+                    e.preventDefault();
+                    alert("密码长度太短！");
+                }
             }
         })
     })

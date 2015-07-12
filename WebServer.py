@@ -123,7 +123,7 @@ class Logout():
             db.Execute(sql)
             web.seeother('index')
         else:
-            return Notice(u'访问错误',  u'当前您尚未登录，页面将自动跳转。', '/index')
+            return Notice(u'访问错误',  u'当前您尚未登录，请返回登录。', '/index')
 
 
 class Register():
@@ -343,7 +343,7 @@ class Settings():
                           "Downloader='%s' WHERE UID='%s'" % (UserName, Tel, NewPassword,
                             E_mail, MaxFiles, MaxSize, NameRule, Downloader, UID)
                     db.Execute(sql)
-                    return Notice(u'操作成功', u'信息修改成功，页面将自动刷新。', '/settings')
+                    return Notice(u'操作成功', u'信息修改成功，请返回查看。', '/settings')
                 except:
                     return Notice(u'操作失败', u'异常错误，请检查你的输入是否合法！', '/settings')
             else:
@@ -507,7 +507,13 @@ class Log():
         if stat:
             if UserInfo['UserStatus'] != USER_STATUS_ADMIN:
                 return Notice(u'无效访问',  u'普通用户无权操作！', '/login')
-            return open(cfg.read('log_filename'), 'r').read().encode('utf-8')
+            filename = cfg.read('log_filename')
+            if type(filename) == unicode:
+                filename = filename.encode('gb18030')
+            data = open(filename, 'r').readlines()
+            data = map(lambda x: x.decode('gb18030'), data)
+            MyTemplate = CreateMyTemplate('Log.html')
+            return MyTemplate.render(msgs=data)
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 

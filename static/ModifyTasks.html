@@ -1,40 +1,123 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width">
+
     <title>任务管理</title>
+
+    <meta name="robots" content="noindex, nofollow">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-responsive.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-icons.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/bootmetro-ui-light.css">
+    <link rel="stylesheet" type="text/css" href="static/assets/css/datepicker.css">
+    <link rel="shortcut icon" href="static/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144"
+          href="static/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114"
+          href="static/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="static/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="static/assets/ico/apple-touch-icon-57-precomposed.png">
+    <script src="static/assets/js/modernizr-2.6.2.min.js"></script>
+    <style>
+        html,
+        body {
+            position: relative;
+            background-color: #f2f0e4;
+            background: transparent url(static/assets/img/bkg-win8.jpg) repeat 0 0;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-<table border="1">
-    <thead>
-    <tr>
-        <td>下载链接</td>
-        <td>下载状态</td>
-        <td>保存位置</td>
-        <td>起始时间</td>
-        <td>结束时间</td>
-        <td>所在时区</td>
-        <td>重试次数</td>
-    </tr>
-    </thead>
-    <tbody>
-%for task in CurrentTask:
-    <tr>
-        <td>${task[1].decode('utf-8')}</td>
-%if task[2] == 0:
-        <td>已暂停</td>
-%elif task[2] == 1:
-        <td>等待中</td>
-%elif task[2] == 2:
-        <td>正在下载</td>
+<div class="container">
+    <div id="nav-bar">
+        <div class="row">
+            <div class="span9">
+                <div id="header-container">
+                    <a id="backbutton" class="win-backbutton" href="/"></a>
+                    <h5>下载器</h5>
+
+                    <div class="dropdown">
+                        <a class="header-dropdown dropdown-toggle accent-color" data-toggle="dropdown" href="#">
+                            任务管理
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+%if UserStatus == 0 or UserStatus == 1:
+                            <li><a href="/modify_tasks">查看任务</a></li>
+                            <li><a href="/modify_rules">管理规则</a></li>
+                            <li><a href="/settings">个人设置</a></li>
 %endif
-        <td id="SavePos">${task[3].decode('utf-8')}</td>
-        <td>${task[4].decode('utf-8')}</td>
-        <td>${task[5].decode('utf-8')}</td>
-        <td>${task[7].decode('utf-8')}</td>
-        <td>${task[8]}</td>
-    </tr>
+%if UserStatus == 0:
+                            <li><a href="/admin">系统管理</a></li>
+                            <li><a href="/log">系统日志</a></li>
+%endif
+                            <li class="divider"></li>
+                            <li><a href="/faq">常见问题</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <td>下载链接</td>
+            <td>下载状态</td>
+            <td>保存位置</td>
+            <td>起始时间</td>
+            <td>结束时间</td>
+            <td>所在时区</td>
+            <td>重试次数</td>
+        </tr>
+        </thead>
+        <tbody>
+%for task in CurrentTask:
+        <tr>
+            <td>${task[1].decode('utf-8')}</td>
+%if task[2] == 0:
+            <td>已暂停</td>
+%elif task[2] == 1:
+            <td>等待中</td>
+%elif task[2] == 2:
+            <td>正在下载</td>
+%endif
+            <td id="SavePos">${task[3].decode('utf-8')}</td>
+            <td>${task[4].decode('utf-8')}</td>
+            <td>${task[5].decode('utf-8')}</td>
+            <td>${task[7].decode('utf-8')}</td>
+            <td>${task[8]}</td>
+        </tr>
 %endfor
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="static/assets/js/jquery-1.11.0.min.js"></script>
+<script>window.jQuery || document.write(String.fromCharCode(60) + "script src='static/assets/js/jquery-1.11.0.min.js'>\x3C/script>")</script>
+<!--[if IE 7]>
+<script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
+<![endif]-->
+
+<script type="text/javascript" src="static/assets/js/google-code-prettify/prettify.js"></script>
+<script type="text/javascript" src="static/assets/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-panorama.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-pivot.js"></script>
+<script type="text/javascript" src="static/assets/js/bootmetro-charms.js"></script>
+<script type="text/javascript" src="static/assets/js/bootstrap-datepicker.js"></script>
+<script type="text/javascript" src="static/assets/js/holder.js"></script>
+<script type="text/javascript" src="static/assets/js/Chart.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#register").click(function () {
+            window.location.href = '/register'
+        })
+    })
+</script>
 </body>
 </html>

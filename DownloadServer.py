@@ -112,15 +112,16 @@ class DownloadServer():
                     if type(SubDir) == str:
                         SubDir = SubDir.decode('utf-8')
                     Location = os.path.join(Location, SubDir)
+
+                # 重新转换编码
+                if type(Location) == unicode:
+                    Location = Location.encode('utf-8')
+
                 # 4. 最后根据命名规则确定文件名
                 if task[9] == 'auto':
                     Location = os.path.join(Location, URL.split('/')[-1])
                 else:
                     Location = os.path.join(Location, RuleName + '.' + URL.split('.')[-1])
-
-                # 重新转换编码
-                if type(Location) == unicode:
-                    Location = Location.encode('utf-8')
 
                 sql = "INSERT INTO `CurrentTask` VALUES ('%s', '%s', 1, '%s', '%s', '%s', %d, '%s', 0)" % (
                         UID, URL, Location, StartTime.ctime(), FinishTime.ctime(), TaskID, TimeZone.zone)

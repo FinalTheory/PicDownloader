@@ -11,6 +11,7 @@ import sys
 from re import match
 from random import random
 from mako.template import Template
+from mako.lookup import TemplateLookup
 from time import time
 from Tools import cfg, db, check_path
 from shutil import rmtree
@@ -39,17 +40,18 @@ urls = (
 )
 
 def CreateMyTemplate(filename):
-        return Template(
-            filename='static/' + filename,
+        my_lookup = TemplateLookup(
+            directories=['static'],
             input_encoding='utf-8',
             output_encoding="utf-8",
             encoding_errors='replace'
         )
+        return my_lookup.get_template(filename)
 
 
 def Notice(title, msg, url):
     MyTemplate = CreateMyTemplate('Notice.html')
-    return MyTemplate.render(title=title, msg=msg, url=url)
+    return MyTemplate.render(PageHeader=title, msg=msg, url=url)
 
 
 def CheckLogin():
@@ -87,7 +89,7 @@ class Index():
         stat, UserInfo = CheckLogin()
         if stat:
             MyTemplate = CreateMyTemplate('Index.html')
-            return MyTemplate.render(SiteName=cfg.read('site_name'), **UserInfo)
+            return MyTemplate.render(PageHeader=cfg.read('site_name'), **UserInfo)
         else:
             web.seeother('/login')
 
@@ -95,7 +97,7 @@ class Index():
 class Login():
     def GET(self):
         MyTemplate = CreateMyTemplate('Login.html')
-        return MyTemplate.render()
+        return MyTemplate.render(PageHeader=u"用户登录")
 
     def POST(self):
         data = web.input()
@@ -130,7 +132,7 @@ class Register():
 
     def GET(self):
         MyTemplate = CreateMyTemplate("Register.html")
-        return MyTemplate.render()
+        return MyTemplate.render(PageHeader=u'用户注册')
 
     def POST(self):
         data = web.input()
@@ -315,7 +317,9 @@ class Settings():
                   "FROM Users WHERE UID='%s'" % UserInfo['UID']
             result = db.QueryFirst(sql)
             MyTemplate = CreateMyTemplate('Settings.html')
-            return MyTemplate.render(SiteName=cfg.read('site_name'), UserInfo=result, **UserInfo)
+            return MyTemplate.render(SiteName=cfg.read('site_name'),
+                                     PageHeader=u'个人设置',
+                                     UserInfo=result, **UserInfo)
         else:
             web.seeother('/login')
 
@@ -361,6 +365,7 @@ class Admin():
             sql = "SELECT UID, UserName, PassWord, MaxFiles, MaxSize FROM Users"
             AllUserData = db.Query(sql)
             return MyTemplate.render(
+                PageHeader=u"系统管理",
                 AllUserData=AllUserData,
                 SiteName=cfg.read('site_name'),
                 GlobalPos=cfg.read('global_pos'),
@@ -493,7 +498,7 @@ class ModifyTasks():
             else:
                 sql = "SELECT * FROM `CurrentTask` WHERE `UID` = '%s'" % UserInfo['UID']
             results = db.Query(sql)
-            return MyTemplate.render(CurrentTask=results, **UserInfo)
+            return MyTemplate.render(PageHeader=u'任务管理', CurrentTask=results, **UserInfo)
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 
@@ -513,7 +518,7 @@ class Log():
             data = open(filename, 'r').readlines()
             data = map(lambda x: x.decode('gb18030'), data)
             MyTemplate = CreateMyTemplate('Log.html')
-            return MyTemplate.render(msgs=data)
+            return MyTemplate.render(msgs=data, PageHeader=u'系统日志')
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 

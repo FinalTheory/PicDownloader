@@ -1,15 +1,17 @@
 # -*- coding: UTF-8 -*-
 __author__ = 'FinalTheory'
 
-import os
 import sys
+sys.path.append(".")
+sys.path.append("..")
+import os
 import unittest
 import BeautifulSoup as bs
 from pytz import timezone
 import requests
-from .. Tools import cfg, db, check_port, check_connect
-from .. WebServer import start_web_server
-from .. DownloadServer import DownloadServer
+from Tools import cfg, db, check_port, check_connect
+from WebServer import start_web_server
+from DownloadServer import DownloadServer
 from thread import start_new_thread
 from datetime import datetime
 from shutil import copyfile, rmtree
@@ -729,6 +731,7 @@ class TestWebFunction(BasicTest):
             post_data['TimeZone'] = tz
             post_data['Downloader'] = dwn
             post_data['URL_Rule'] = 'www.baidu.com/img/bdlogo.png'
+            post_data['NameRule'] = 'rule'
             r = s.post(post_url, data=post_data)
             # 检查操作是否成功
             self.assertTrue('200' in r.text)

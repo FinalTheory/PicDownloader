@@ -8,9 +8,9 @@ import web
 web.config.debug = False
 import os
 import sys
+import pygments.styles.default
 from re import match
 from random import random
-from mako.template import Template
 from mako.lookup import TemplateLookup
 from time import time
 from Tools import cfg, db, check_path

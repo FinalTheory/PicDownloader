@@ -4,6 +4,7 @@ __author__ = 'FinalTheory'
 
 import os
 import imghdr
+import requests
 from datetime import datetime
 from threading import Semaphore, Lock
 from thread import start_new_thread
@@ -131,15 +132,24 @@ class PythonDownloader(BasicDownloader):
             sleep(random()+1)
             # 然后将下载的命令行写入对应文件
             with open(Location, 'w') as fid:
-                data = ' '.join(u'urlretrieve "%s" to "%s"' % (URL, Location))
+                data = ' '.join(u'request.get() "%s" to "%s"' % (URL, Location))
                 if type(data) == unicode:
                     data = data.encode('gb18030')
                 fid.write(data)
         else:
+            # 首先获取程序的根路径
             try:
-                urlretrieve(URL, Location)
-            except Exception:
-                log.log_message(u"[ERROR] 'urlretrieve' to '%s' execution failed!" % Location)
+                approot = os.path.dirname(os.path.abspath(__file__))
+            except NameError:
+                import sys
+                approot = os.path.dirname(os.path.abspath(sys.argv[0]))
+            # 然后开始下载
+            try:
+                r = requests.get(URL, verify=os.path.join(approot, '..', 'cacert.pem'))
+                with open(Location, "wb") as fid:
+                    fid.write(r.content)
+            except Exception as err:
+                log.log_message(u"[ERROR] 'request.get()' to '%s' execution failed! %s" % (Location, err))
 
 
 class ThreadPool:

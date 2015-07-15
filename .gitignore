@@ -110,3 +110,6 @@ jquery*.*
 aria2*
 wget*
 PythonEnv/
+build/
+dist/
+icons/

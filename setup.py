@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 __author__ = 'FinalTheory'
 
 from distutils.core import setup
@@ -26,7 +27,8 @@ data_files.extend([item for item in copy_dir('static')])
 options = {"py2exe": {
     "compressed": 1,
     "optimize": 2,
-    "bundle_files": 1
+    # 在Win7上需要设置为3，即不打包，否则会导致无法导入模块
+    "bundle_files": 1,
 }}
 
 setup(

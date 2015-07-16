@@ -39,7 +39,7 @@ CREATE TABLE `Users` (
 	`MaxSize`	INTEGER NOT NULL,
 	`MaxFiles`	INTEGER NOT NULL,
 	`Downloader`	TEXT NOT NULL,
-	`NameRule`	TEXT NOT NULL DEFAULT 'default',
+	`NameRule`	TEXT NOT NULL DEFAULT 'auto',
 	PRIMARY KEY(UID)
 );
 

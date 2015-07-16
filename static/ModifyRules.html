@@ -303,17 +303,39 @@
                       <option value="America/New_York">纽约时间</option>
                     </select><br>
                     &nbsp;
+<%
+    if NameRule == 'auto':
+        text_a = 'selected="selected"'
+        text_b = ''
+    else:
+        text_b = 'selected="selected"'
+        text_a = ''
+%>
                     <strong>文件命名规则：</strong>
                     <select name="NameRule">
-                      <option value="auto" selected="selected">根据下载链接</option>
-                      <option value="rule">根据规则名称</option>
+                      <option value="auto" ${text_a}>根据下载链接</option>
+                      <option value="rule" ${text_b}>根据规则名称</option>
                     </select><br>
                     &nbsp;
+<%
+    if Downloader == 'aria2':
+        text_a = 'selected="selected"'
+        text_b = ''
+        text_c = ''
+    elif Downloader == 'wget':
+        text_b = 'selected="selected"'
+        text_a = ''
+        text_c = ''
+    else:
+        text_c = 'selected="selected"'
+        text_a = ''
+        text_b = ''
+%>
                     <strong>默认下载工具：</strong>
                     <select name="Downloader">
-                        <option value="aria2" selected="selected">Aria2下载器</option>
-                        <option value="wget">Wget下载器</option>
-                        <option value="python">Python下载器</option>
+                        <option value="aria2" ${text_a}>Aria2下载器</option>
+                        <option value="wget" ${text_b}>Wget下载器</option>
+                        <option value="python" ${text_c}>Python下载器</option>
                     </select>
                     &nbsp;
                     <strong>持续时间：</strong>

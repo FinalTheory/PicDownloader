@@ -33,8 +33,8 @@
         </div>
     </div>
     <div class="page-header">
-        <h2>全局设置
-            <small>改改改</small>
+        <h2>
+            全局设置
         </h2>
     </div>
     <form class="form-horizontal" id="config" method="POST" action="/admin">
@@ -102,6 +102,13 @@
                 </div>
             </div>
             <div class="control-group">
+                <label class="control-label" for="maxbuf">显示日志数量</label>
+
+                <div class="controls">
+                    <input type="text" id="maxlog" name="MaxLog" value="${MaxLog}">
+                </div>
+            </div>
+            <div class="control-group">
                 <div class="controls">
                     <input type="button" value="提交" class="btn btn-primary" id="btn_config">
                 </div>
@@ -110,8 +117,8 @@
     </form>
 
     <div class="page-header">
-        <h2>用户管理
-            <small>管管管</small>
+        <h2>
+            用户管理
         </h2>
     </div>
     <form method="POST" action="/admin">
@@ -160,22 +167,8 @@
     </form>
 </div>
 
+<%include file="Footer.html"/>
 
-<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
-<script src="static/assets/js/jquery-1.11.0.min.js"></script>
-<script>window.jQuery || document.write(String.fromCharCode(60) + "script src='static/assets/js/jquery-1.11.0.min.js'>\x3C/script>")</script>
-<!--[if IE 7]>
-<script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
-<![endif]-->
-
-<script type="text/javascript" src="static/assets/js/google-code-prettify/prettify.js"></script>
-<script type="text/javascript" src="static/assets/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-panorama.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-pivot.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-charms.js"></script>
-<script type="text/javascript" src="static/assets/js/bootstrap-datepicker.js"></script>
-<script type="text/javascript" src="static/assets/js/holder.js"></script>
-<script type="text/javascript" src="static/assets/js/Chart.min.js"></script>
 <script type="text/javascript">
     $(document).ready(function () {
         $("#btn_config").click(function () {

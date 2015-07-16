@@ -57,7 +57,8 @@ def Notice(title, msg, url):
 def CheckLogin():
     SessionID = web.cookies().get('SessionID', None)
     result = db.QueryFirst('SELECT UID, UserStatus, UserName, Tel, '
-                           '`E-mail`, MaxSize, MaxFiles FROM Users WHERE SessionID="%s"' % SessionID)
+                           '`E-mail`, MaxSize, MaxFiles, Downloader, NameRule '
+                           'FROM Users WHERE SessionID="%s"' % SessionID)
     if result:
         UserInfo = {
             'UID': result[0].decode('utf-8'),
@@ -66,7 +67,9 @@ def CheckLogin():
             'Tel': result[3].decode('utf-8'),
             'E-mail': result[4].decode('utf-8'),
             'MaxSize': result[5],
-            'MaxFiles': result[6]
+            'MaxFiles': result[6],
+            'Downloader': result[7],
+            'NameRule': result[8]
         }
         UserStatus = result[1]
         if UserStatus == USER_STATUS_ADMIN or UserStatus == USER_STATUS_NORMAL:
@@ -375,6 +378,7 @@ class Admin():
                 PortName=cfg.read('port_name'),
                 MaxThreads=cfg.read('max_threads'),
                 MaxBuf=cfg.read('max_buf'),
+                MaxLog=cfg.read('max_log'),
                 **UserInfo
             )
         else:
@@ -441,7 +445,8 @@ class Admin():
                         'CleanerCheckingInterval': int,
                         'PortName': int,
                         'MaxThreads': int,
-                        'MaxBuf': int
+                        'MaxBuf': int,
+                        'MaxLog': int
                     }
                     ConfigName2Str = {
                         'SiteName': 'site_name',
@@ -451,7 +456,8 @@ class Admin():
                         'CleanerCheckingInterval': 'cleaner_checking_interval',
                         'PortName': 'port_name',
                         'MaxThreads': 'max_threads',
-                        'MaxBuf': 'max_buf'
+                        'MaxBuf': 'max_buf',
+                        'MaxLog': 'max_log',
                     }
                     # 首先检查一遍全部数据，看其中是否有空项
                     for key in ConfigName2Str.keys():
@@ -517,6 +523,12 @@ class Log():
                 filename = filename.encode('gb18030')
             data = open(filename, 'r').readlines()
             data = map(lambda x: x.decode('gb18030'), data)
+            # 日志截断
+            max_log = int(cfg.read('max_log'))
+            if len(data) >= max_log:
+                data = data[0:max_log]
+            # 翻转顺序
+            data = data[::-1]
             MyTemplate = CreateMyTemplate('Log.html')
             return MyTemplate.render(msgs=data, PageHeader=u'系统日志')
         else:

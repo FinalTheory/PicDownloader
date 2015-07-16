@@ -35,7 +35,7 @@
     </div>
     <div class="page-header">
         <h2>用户设置
-            <small>修改你的个人信息</small>
+            <small>修改你的信息与偏好</small>
         </h2>
     </div>
 
@@ -57,7 +57,7 @@
             </div>
         </div>
         <div class="control-group">
-            <label class="control-label" for="UID">电子邮件</label>
+            <label class="control-label" for="E-mail">电子邮件</label>
 
             <div class="controls">
                 <input type="text" name="E-mail" id="E-mail" placeholder="E-mail" value="${UserInfo[2].decode('utf-8')}"
@@ -80,46 +80,58 @@
                        required="required">
             </div>
         </div>
+
         <div class="control-group">
             <label class="control-label" for="NameRule">文件命名规则</label>
 
             <div class="controls">
-                <input type="text" name="NameRule" id="NameRule" placeholder="NameRule"
-                       value="${UserInfo[5].decode('utf-8')}" required="required">
-            </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label" for="Downloader">默认下载器</label>
-
-            <div class="controls">
-                <select name="Downloader">
-%if UserInfo[6] == "aria2":
-                    <option value="aria2" selected="selected">Aria2</option>
-%else:
-                    <option value="aria2">Aria2</option>
-%endif
-%if UserInfo[6] == "wget":
-                    <option value="wget" selected="selected">Wget</option>
-%else:
-                    <option value="wget">Wget</option>
-%endif
-%if UserInfo[6] == "python":
-                    <option value="python" selected="selected">Python默认</option>
-%else:
-                    <option value="python">Python默认</option>
-%endif
+<%
+    if UserInfo[5].decode('utf-8') == 'auto':
+        text_a = 'selected="selected"'
+        text_b = ''
+    else:
+        text_b = 'selected="selected"'
+        text_a = ''
+%>
+                <select name="NameRule" id="NameRule">
+                    <option value="auto" ${text_a}>根据下载链接</option>
+                    <option value="rule" ${text_b}>根据规则名称</option>
                 </select>
             </div>
         </div>
         <div class="control-group">
-            <label class="control-label" for="OldPassWord">原密码</label>
+            <label class="control-label" for="Downloader">默认下载器</label>
+<%
+    if UserInfo[6] == 'aria2':
+        text_a = 'selected="selected"'
+        text_b = ''
+        text_c = ''
+    elif UserInfo[6] == 'wget':
+        text_b = 'selected="selected"'
+        text_a = ''
+        text_c = ''
+    else:
+        text_c = 'selected="selected"'
+        text_a = ''
+        text_b = ''
+%>
+            <div class="controls">
+                <select name="Downloader" id="Downloader">
+                    <option value="aria2"  ${text_a}>Aria2下载器</option>
+                    <option value="wget"   ${text_b}>Wget下载器</option>
+                    <option value="python" ${text_c}>Python下载器</option>
+                </select>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="oldpasswd">原密码</label>
 
             <div class="controls">
                 <input type="password" name="OldPassWord" id="oldpasswd" placeholder="Old passWord">
             </div>
         </div>
         <div class="control-group">
-            <label class="control-label" for="NewPassWord">新密码</label>
+            <label class="control-label" for="passwd1">新密码</label>
 
             <div class="controls">
                 <input type="password" name="NewPassWord" id="passwd1" placeholder="New passWord">
@@ -140,21 +152,8 @@
     </form>
 </div>
 
-<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
-<script src="static/assets/js/jquery-1.11.0.min.js"></script>
-<script>window.jQuery || document.write(String.fromCharCode(60) + "script src='static/assets/js/jquery-1.11.0.min.js'>\x3C/script>")</script>
-<!--[if IE 7]>
-<script type="text/javascript" src="scripts/bootmetro-icons-ie7.js"></script>
-<![endif]-->
+<%include file="Footer.html"/>
 
-<script type="text/javascript" src="static/assets/js/google-code-prettify/prettify.js"></script>
-<script type="text/javascript" src="static/assets/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-panorama.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-pivot.js"></script>
-<script type="text/javascript" src="static/assets/js/bootmetro-charms.js"></script>
-<script type="text/javascript" src="static/assets/js/bootstrap-datepicker.js"></script>
-<script type="text/javascript" src="static/assets/js/holder.js"></script>
-<script type="text/javascript" src="static/assets/js/Chart.min.js"></script>
 <script type="text/javascript">
     $(document).ready(function () {
         $("form").submit(function (e) {

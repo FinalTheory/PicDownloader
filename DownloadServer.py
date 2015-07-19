@@ -5,6 +5,7 @@ __author__ = 'FinalTheory'
 import socket
 socket.setdefaulttimeout(5)
 import os
+import re
 import sys
 from dateutil import parser
 from time import sleep
@@ -12,7 +13,7 @@ from datetime import datetime, timedelta
 from pytz import timezone
 from ThreadPool import ThreadPool
 from thread import start_new_thread
-from Tools import db, cfg, get_dir_size
+from Tools import db, log, cfg, get_dir_size, check_connect
 from GlobalDefs import *
 
 
@@ -25,7 +26,7 @@ class DownloadServer():
             int(cfg.read('max_buf')),
         )
         # 注意先清空先前留下的下载任务
-        # TODO: 改为继续执行先前未完成的任务
+        # TODO: 可以考虑改为继续执行先前未完成的任务
         db.Execute("DELETE FROM `CurrentTask`")
 
     def start(self):
@@ -36,7 +37,8 @@ class DownloadServer():
         # 同时启动生产者线程
         start_new_thread(self.worker_daemon, ())
         # 最后启动配额管理线程
-        start_new_thread(self.cleaner_daemon, ())
+        if cfg.read('disk_quota') == 'true':
+            start_new_thread(self.cleaner_daemon, ())
 
     # 这个方法对于每个任务，判断是否进入了新的一天
     # 如果是的话，就将新的任务增加到任务列表中
@@ -75,7 +77,8 @@ class DownloadServer():
                                      tzinfo=TimeZone)
                 FinishTime = StartTime + timedelta(hours=task[10])
 
-                 # 生成一些与日期相关的数据
+                # 生成一些与日期相关的数据
+                # TODO: 这里设计成offset机制
                 yesterday = today + timedelta(days=-1)
                 tomorrow = today + timedelta(days=1)
                 keywords = {
@@ -92,14 +95,27 @@ class DownloadServer():
                 for key in keywords.keys():
                         keywords[key] = '%02d' % keywords[key]
 
-                # 其次生成下载链接
-                # 用dict中的关键字不断替换URL中字符串
                 TaskID = task[0]
                 UID = task[1]
                 URL = task[2]
-                for key in keywords.keys():
-                    while URL.find(key) != -1:
-                        URL = URL.replace(key, keywords[key])
+
+                URLs = []
+
+                if re.match(".*\{\S+\}.*", URL):
+                    left_quote = URL.find('{')
+                    right_quote = URL.find('}', left_quote + 1)
+                    var_list = URL[left_quote + 1:right_quote].split('|')
+                    for var in var_list:
+                        URLs.append(URL[0:left_quote] + var + URL[right_quote + 1:])
+                else:
+                    URLs.append(URL)
+
+                # 其次生成下载链接
+                # 用dict中的关键字不断替换URL中字符串
+                for i in range(len(URLs)):
+                    for key in keywords.keys():
+                        while URLs[i].find(key) != -1:
+                            URLs[i] = URLs[i].replace(key, keywords[key])
                 # 生成URL后，更新文件保存位置：
                 # 1. 首先读取全局位置
                 Location = cfg.read('global_pos')
@@ -117,37 +133,47 @@ class DownloadServer():
                 if type(Location) == unicode:
                     Location = Location.encode('utf-8')
 
-                # 4. 最后根据命名规则确定文件名
-                if task[9] == 'auto':
-                    Location = os.path.join(Location, URL.split('/')[-1])
-                else:
-                    Location = os.path.join(Location, RuleName + '.' + URL.split('.')[-1])
+                # 为每一个URL生成对应的保存位置
+                Locations = []
+                for idx, URL in enumerate(URLs):
+                    # 4. 最后根据命名规则确定文件名
+                    if task[9] == 'auto':
+                        Locations.append(os.path.join(Location, URL.split('/')[-1]))
+                    else:
+                        # 如果有多个文件，为了避免覆盖，则区分开其文件名
+                        if len(URLs) == 1:
+                            suffix = ''
+                        else:
+                            suffix = str(idx + 1)
+                        Locations.append(os.path.join(Location, RuleName
+                                                      + suffix + '.' + URL.split('.')[-1]))
 
-                sql = "INSERT INTO `CurrentTask` VALUES ('%s', '%s', 1, '%s', '%s', '%s', %d, '%s', 0)" % (
-                        UID, URL, Location, StartTime.ctime(), FinishTime.ctime(), TaskID, TimeZone.zone)
+                for URL, Location in zip(URLs, Locations):
+                    sql = "INSERT INTO `CurrentTask` VALUES ('%s', '%s', 1, '%s', '%s', '%s', %d, '%s', 0)"\
+                          % (UID, URL, Location, StartTime.ctime(), FinishTime.ctime(), TaskID, TimeZone.zone)
 
-                RepeatType = int(task[4])
-                if RepeatType == REP_PER_DAY:
-                    # 如果是每天执行的任务，直接添加到任务列表
-                    db.Execute(sql)
-                elif REP_PER_MON <= RepeatType <= REP_PER_SUN:
-                    # 如果是周任务，则当前weekday必须匹配
-                    if today.isoweekday() == RepeatType:
+                    RepeatType = int(task[4])
+                    if RepeatType == REP_PER_DAY:
+                        # 如果是每天执行的任务，直接添加到任务列表
                         db.Execute(sql)
-                elif RepeatType == REP_PER_MONTH:
-                    # 如果是月任务，日期必须匹配
-                    if today.day == date_nums[2]:
-                        db.Execute(sql)
-                elif RepeatType == REP_PER_YEAR:
-                    # 如果是年任务，月日必须匹配
-                    if today.month == date_nums[1] and today.day == date_nums[2]:
-                        db.Execute(sql)
-                elif RepeatType == REP_PER_ONCE:
-                    # 对于仅执行一次的任务，年月日必须匹配
-                    # 并且放入任务列表中后就暂停掉这项任务
-                    if today.year == date_nums[0] and today.month == date_nums[1] and today.day == date_nums[2]:
-                        db.Execute(sql)
-                        db.Execute("UPDATE `UserTask` SET `Status` = 0 WHERE `TaskID` = %d" % TaskID)
+                    elif REP_PER_MON <= RepeatType <= REP_PER_SUN:
+                        # 如果是周任务，则当前weekday必须匹配
+                        if today.isoweekday() == RepeatType:
+                            db.Execute(sql)
+                    elif RepeatType == REP_PER_MONTH:
+                        # 如果是月任务，日期必须匹配
+                        if today.day == date_nums[2]:
+                            db.Execute(sql)
+                    elif RepeatType == REP_PER_YEAR:
+                        # 如果是年任务，月日必须匹配
+                        if today.month == date_nums[1] and today.day == date_nums[2]:
+                            db.Execute(sql)
+                    elif RepeatType == REP_PER_ONCE:
+                        # 对于仅执行一次的任务，年月日必须匹配
+                        # 并且放入任务列表中后就暂停掉这项任务
+                        if today.year == date_nums[0] and today.month == date_nums[1] and today.day == date_nums[2]:
+                            db.Execute(sql)
+                            db.Execute("UPDATE `UserTask` SET `Status` = 0 WHERE `TaskID` = %d" % TaskID)
         self.prev_day = this_day
 
     # 这个方法定时检查任务列表
@@ -155,7 +181,10 @@ class DownloadServer():
     # 将未过期的任务添加到下载线程池
     # 任务被重试的次数越多，则下载优先级越低
     def update_worker(self, overwrite_time=None):
-        # TODO: 添加任务前先检查当前网络是否连通
+        # 添加任务前先检查当前网络是否连通
+        if not check_connect():
+            log.log_message(u'[ERROR] Network is not available. Skip adding new download tasks.')
+            return
         # 首先选择所有任务列表中未暂停且未被下载中的任务
         sql = "SELECT * FROM `CurrentTask` WHERE `Status` = 1 ORDER BY `RepeatTimes` ASC"
         all_task = db.Query(sql)
@@ -207,6 +236,7 @@ class DownloadServer():
             TotalSize, TotalFiles = get_dir_size(user_home_dir)
             TotalSize /= (1024 * 1024)
             # 如果超出了文件数量配额或者文件大小配额
+            # TODO:这里改成按照文件日期删除
             if TotalSize > MaxSize or TotalFiles > MaxFiles:
                 # 首先暂停该用户所有任务
                 sql = "UPDATE `UserTask` SET `Status` = 0 WHERE `UID` = '%s'" % UID

@@ -200,7 +200,7 @@ class ModifyRules():
             data = web.input(month=[], day=[], hour=[], minute=[])
             action = data.get('action', '')
             URL_Rule = data.get('URL_Rule', '').encode('utf-8')
-            # 检查URL是否合法
+            # 默认使用http协议，如果没有显式指明
             if match('^\w+://', URL_Rule) is None:
                 URL_Rule = 'http://%s' % URL_Rule
             Rule_Name = data.get('Rule_Name', '').encode('utf-8')

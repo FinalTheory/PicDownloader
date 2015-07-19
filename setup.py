@@ -28,7 +28,7 @@ options = {"py2exe": {
     "compressed": 1,
     "optimize": 2,
     # 在Win7上需要设置为3，即不打包，否则会导致无法导入模块
-    "bundle_files": 1,
+    "bundle_files": 3,
 }}
 
 setup(

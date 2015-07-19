@@ -5,6 +5,7 @@ __author__ = 'FinalTheory'
 import os
 import imghdr
 import requests
+import certifi
 from datetime import datetime
 from threading import Semaphore, Lock
 from thread import start_new_thread
@@ -145,7 +146,10 @@ class PythonDownloader(BasicDownloader):
                 approot = os.path.dirname(os.path.abspath(sys.argv[0]))
             # 然后开始下载
             try:
-                r = requests.get(URL, verify=os.path.join(approot, '..', 'cacert.pem'))
+                cert_root = os.path.join(approot, '..', 'cacert.pem')
+                if not os.path.exists(cert_root):
+                    cert_root = certifi.where()
+                r = requests.get(URL, verify=cert_root)
                 with open(Location, "wb") as fid:
                     fid.write(r.content)
             except Exception as err:

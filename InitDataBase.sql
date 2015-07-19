@@ -24,8 +24,7 @@ CREATE TABLE `CurrentTask` (
 	`FinishTime`	TEXT NOT NULL,
 	`TaskID`	INTEGER NOT NULL,
 	`TimeZone`	TEXT NOT NULL,
-	`RepeatTimes`	INTEGER NOT NULL DEFAULT 0,
-	PRIMARY KEY(TaskID)
+	`RepeatTimes`	INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE `Users` (

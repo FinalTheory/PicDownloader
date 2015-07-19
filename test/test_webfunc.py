@@ -90,6 +90,7 @@ class BasicTest(unittest.TestCase):
         global temp_dir
         temp_dir = mkdtemp(prefix='PicDownloader_')
         cfg.write('global_pos', temp_dir)
+        cfg.write('disk_quota', 'true')
         cfg.config_check()
         # 最后启动HTTP服务
         start_new_thread(start_web_server, ())
@@ -481,7 +482,8 @@ class TestWebFunction(BasicTest):
             'WorkerCheckingInterval': '4',
             'CleanerCheckingInterval': '86401',
             'MaxThreads': '10',
-            'MaxBuf': '1024'
+            'MaxBuf': '1024',
+            'MaxLog': '128',
         }
         # 测数据无效的情况
         r = s.post('http://localhost/admin', post_data)
@@ -557,7 +559,7 @@ class TestWebFunction(BasicTest):
             'E-mail': '123@qq.com',
             'MaxFiles': '1124',
             'MaxSize': '',
-            'NameRule': 'default',
+            'NameRule': 'auto',
             'Downloader': 'aria2',
             'OldPassWord': '12345678',
             'NewPassWord': '1994.2.21'

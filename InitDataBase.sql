@@ -12,7 +12,8 @@ CREATE TABLE `UserTask` (
 	`TaskTime` INTEGER DEFAULT 12,
 	`Downloader` TEXT DEFAULT 'python',
 	`CheckType` TEXT DEFAULT 'auto',
-	`CheckSize` INTEGER DEFAULT 4096
+	`CheckSize` INTEGER DEFAULT 4096,
+	`FormatStr`	TEXT	DEFAULT	'%02d'
 );
 
 CREATE TABLE `CurrentTask` (

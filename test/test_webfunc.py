@@ -17,6 +17,7 @@ from datetime import datetime
 from shutil import copyfile, rmtree
 from tempfile import mkdtemp
 from time import sleep
+from Tools import get_sorted_file_list
 import imghdr
 
 temp_file_name = 'test.txt'
@@ -49,7 +50,8 @@ data_modify_rule = {
     'Downloader': 'aria2',
     'TaskTime': '12',
     'CheckType': 'auto',
-    'CheckSize': '4096'
+    'CheckSize': '4096',
+    'FormatStr': '%02d',
 }
 
 data_user_add = {
@@ -63,6 +65,7 @@ data_user_add = {
 }
 
 temp_dir = ''
+
 
 class BasicTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -116,8 +119,9 @@ class BasicTest(unittest.TestCase):
         if os.path.exists(cfg_file + '.bak'):
             os.rename(cfg_file + '.bak', cfg_file)
 
+
 class TestWebFunction(BasicTest):
-# ********************************下面是辅助的函数等********************************
+    # ********************************下面是辅助的函数等********************************
 
     def __init__(self, *args, **kwargs):
         super(TestWebFunction, self).__init__(*args, **kwargs)
@@ -389,11 +393,11 @@ class TestWebFunction(BasicTest):
         res = soup.findAll('input', {'type': 'hidden', 'name': 'TaskID'})
         task_id = map(lambda x: str(x['value']), res)
         new_urls = [
-            'http://www.test.com/%day%.png',
-            'www.test.com/%prev_day%.png',
-            'http://www.test.com/%next_day%.png',
-            'www.test.com/%year%%mon%%day%.png',
-            'www.test.com/%prev_year%%next_mon%%day%.png'
+            'http://www.test.com/%day@Asia/Shanghai#0%.png',
+            'www.test.com/123.png',
+            'www.test.com/%year@Asia/Shanghai#0%.png',
+            'http://www.test.com/123.png',
+            'www.test.com/%year@Asia/Shanghai#0%%mon@Asia/Shanghai#0%%day@Asia/Shanghai#0%.png',
         ]
         self.assertTrue(len(task_id) == len(new_urls))
         for idx in xrange(len(new_urls)):
@@ -662,9 +666,10 @@ class TestWebFunction(BasicTest):
             if server.thread_pool.count_working_thread() == 0:
                 break
         server.clean_worker()
-        sql = "SELECT COUNT(`TaskID`) FROM `UserTask` WHERE `UID` = 'test02' AND Status = 0"
+        download_path = os.path.join(temp_dir, 'test02')
+        all_file_info = get_sorted_file_list(download_path)[2]
         # 应该不会触发清理
-        self.assertTrue(db.Query(sql)[0][0] == 0)
+        self.assertEqual(len(all_file_info), 5)
 
     def test_14_disk_quota_02(self):
         s, r = self.login('test02', '3.1415926')
@@ -701,12 +706,16 @@ class TestWebFunction(BasicTest):
             sleep(0.5)
             if server.thread_pool.count_working_thread() == 0:
                 break
+        # 现在应该比最大值多出一个文件
+        download_path = os.path.join(temp_dir, 'test02')
+        all_file_info = get_sorted_file_list(download_path)[2]
+        self.assertEqual(len(all_file_info), 6)
         server.clean_worker()
-        sql = "SELECT COUNT(`TaskID`) FROM `UserTask` WHERE `UID` = 'test02' AND Status = 0"
-        # 这次应该会触发清理
-        self.assertTrue(db.Query(sql)[0][0] == 6)
-        sql = "SELECT COUNT(`TaskID`) FROM `CurrentTask` WHERE `UID` = 'test02'"
-        self.assertTrue(db.Query(sql)[0][0] == 0)
+        # 现在应该会触发清理，少了一个文件
+        all_file_info = get_sorted_file_list(download_path)[2]
+        self.assertEqual(len(all_file_info), 5)
+        # 并且文件的时间戳数组也应该是单调有序的
+        self.assertEqual(all_file_info, sorted(all_file_info, key=lambda x: x[2]))
 
     def test_15_real_download_test(self):
         # 首先删除所有先前的规则以及文件

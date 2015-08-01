@@ -37,7 +37,10 @@ urls = (
     '/admin', 'Admin',
     # 日志显示功能
     '/log', 'Log',
+    # 帮助（项目主页）
+    '/faq', 'Faq',
 )
+
 
 def CreateMyTemplate(filename):
         my_lookup = TemplateLookup(
@@ -154,7 +157,6 @@ class Register():
             E_mail = data.get('E-mail').encode('utf-8')
             MaxSize = int(data.get('MaxSize'))
             MaxFiles = int(data.get('MaxFiles'))
-            # TODO: 更改数据库格式，去除无用设置
             sql = "INSERT INTO `Users`(`UID`,`SessionID`,`UserStatus`," \
                   "`UserName`,`PassWord`,`Tel`,`E-mail`,`MaxSize`,`MaxFiles`,`Downloader`) " \
                   "VALUES ('%s',NULL,1,'%s','%s','%s','%s',%d,%d,'%s');" \
@@ -278,11 +280,12 @@ class ModifyRules():
                     CheckType = data.get('CheckType', 'auto').encode('utf-8')
                     TaskTime = int(data.get('TaskTime', '12'))
                     CheckSize = int(data.get('CheckSize', '4096'))
-                    sql = "INSERT INTO UserTask (UID, URL_Rule, Rule_Name, RepeatType, RepeatValue, " \
-                          "TimeZone, Status, SubDirectory, NameRule, TaskTime, Downloader, CheckType, CheckSize) " \
-                          "VALUES ('%s', '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d)" % \
-                          (UID, URL_Rule, Rule_Name, RepeatLevel, RepeatValue, TimeZone, Status,
-                           SubDir.encode('utf-8'), NameRule, TaskTime, Downloader, CheckType, CheckSize)
+                    FormatStr = data.get('FormatStr', '%02d').encode('utf-8')
+                    sql = "INSERT INTO UserTask (UID, URL_Rule, Rule_Name, RepeatType, RepeatValue, TimeZone, Status, " \
+                          "SubDirectory, NameRule, TaskTime, Downloader, CheckType, CheckSize, FormatStr) " \
+                          "VALUES ('%s', '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d, '%s', '%s', %d, '%s')" % \
+                          (UID, URL_Rule, Rule_Name, RepeatLevel, RepeatValue, TimeZone, Status, SubDir.encode('utf-8'),
+                           NameRule, TaskTime, Downloader, CheckType, CheckSize, FormatStr)
                     if len(URL_Rule) == 0 or len(Rule_Name) == 0:
                         raise Exception(u'请输入有效的下载链接和任务名称')
                     # 为任务建立子目录
@@ -389,7 +392,6 @@ class Admin():
         if stat and UserInfo['UserStatus'] == USER_STATUS_ADMIN:
             data = web.input()
             action = data.get('action')
-            # TODO: 增加一个停止/启动所有线程的功能
             if action == 'modify':
                 try:
                     UID = data.get('UID').encode('utf-8')
@@ -434,9 +436,7 @@ class Admin():
                         'msg': u'%s\n请检查学号/工号是否合法！' % err
                     })
             elif action == 'config':
-                # TODO: 增加几个新设置项的处理机制
                 try:
-                    # TODO: 这里可以为更多设置项增加检查函数，似乎这就是单子的一种用法吧？
                     CheckFunc = {
                         'SiteName': None,
                         'GlobalPos': check_path,
@@ -534,6 +534,10 @@ class Log():
         else:
             return Notice(u'无效访问',  u'请先登录！', '/login')
 
+
+class Faq():
+    def GET(self):
+        web.seeother('https://github.com/FinalTheory/PicDownloader')
 
 def start_web_server():
     app = web.application(urls, globals())

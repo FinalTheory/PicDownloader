@@ -44,7 +44,7 @@
                 duration: 500
             },
             buttons: {
-                "Ok": function() {
+                "提交": function() {
                     var data = "action=add&" + $("#New_Rule").serialize();
                     if ( !(document.getElementById('radio_day').checked ||
                            document.getElementById('radio_week').checked ||
@@ -134,6 +134,36 @@
                 console.log(data);
             }
         }
+
+        function insertText(obj, str) {
+            obj.focus();
+            if (document.selection) {
+                var sel = document.selection.createRange();
+                sel.text = str;
+            } else if (typeof obj.selectionStart === 'number' && typeof obj.selectionEnd === 'number') {
+                var startPos = obj.selectionStart,
+                        endPos = obj.selectionEnd,
+                        cursorPos = startPos,
+                        tmpStr = obj.value;
+                obj.value = tmpStr.substring(0, startPos) + str + tmpStr.substring(endPos, tmpStr.length);
+                cursorPos += str.length;
+                obj.selectionStart = obj.selectionEnd = cursorPos;
+            } else {
+                obj.value += str;
+            }
+        }
+        function moveEnd(obj) {
+            obj.focus();
+            var len = obj.value.length;
+            if (document.selection) {
+                var sel = obj.createTextRange();
+                sel.moveStart('character', len);
+                sel.collapse();
+                sel.select();
+            } else if (typeof obj.selectionStart == 'number' && typeof obj.selectionEnd == 'number') {
+                obj.selectionStart = obj.selectionEnd = len;
+            }
+        }
         // 提交修改的按钮
         $(".btn_submit_modify").click(function() {
             SubmitModifyData($(this), "action=modify");
@@ -144,49 +174,19 @@
         });
         //下面这些按钮用于插入各种变量
         $("#add_day").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%day%");
+            insertText(document.getElementById('URL_input'),
+                    "%day@" + $("#var_time_zone").val() + "#" + $("#DayOffset").val() + "%");
+            //moveEnd(document.getElementById('URL_input'));
         });
         $("#add_mon").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%mon%");
+            insertText(document.getElementById('URL_input'),
+                    "%mon@" + $("#var_time_zone").val() + "#" + $("#DayOffset").val() + "%");
+            //moveEnd(document.getElementById('URL_input'));
         });
         $("#add_year").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%year%");
-        });
-        $("#add_day2").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%prev_day%");
-        });
-        $("#add_mon2").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%prev_mon%");
-        });
-        $("#add_year2").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%prev_year%");
-        });
-        $("#add_day3").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%next_day%");
-        });
-        $("#add_mon3").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%next_mon%");
-        });
-        $("#add_year3").click(function() {
-            var input = $("#URL_input");
-            var cur_text = input.val();
-            input.val(cur_text + "%next_year%");
+            insertText(document.getElementById('URL_input'),
+                    "%year@" + $("#var_time_zone").val() + "#" + $("#DayOffset").val() + "%");
+            //moveEnd(document.getElementById('URL_input'));
         });
         HideAll();
     })
@@ -208,17 +208,18 @@
                 <td>
                     <input type="text" name="URL_Rule" value="" size="60" id="URL_input" />
                     <div>
-                        <input type="button" id="add_day" value="日(今日)">
-                        <input type="button" id="add_mon" value="月(今日)">
-                        <input type="button" id="add_year" value="年(今日)">
-                        <br>
-                        <input type="button" id="add_day2" value="日(昨天)">
-                        <input type="button" id="add_mon2" value="月(昨天)">
-                        <input type="button" id="add_year2" value="年(昨天)">
-                        <br>
-                        <input type="button" id="add_day3" value="日(明天)">
-                        <input type="button" id="add_mon3" value="月(明天)">
-                        <input type="button" id="add_year3" value="年(明天)">
+                        &nbsp;
+                        <strong>变量时区：</strong>
+                        <select id="var_time_zone">
+                            <%include file="TimeZone.html"/>
+                        </select>
+                        <br>&nbsp;
+                        <strong>日期偏移：</strong>
+                        <input type="text" id="DayOffset" value="0" size="2"/>
+                        <strong>　插入变量：</strong>
+                        <input type="button" id="add_day" value="日">
+                        <input type="button" id="add_mon" value="月">
+                        <input type="button" id="add_year" value="年">
                     </div>
                 </td>
             </tr>
@@ -295,14 +296,12 @@
                     <strong>当前任务状态：</strong>
                     <input type="radio" name="Status" value="1" checked="checked" />启用
                     <input type="radio" name="Status" value="0" />停用
-                    &nbsp;
-                    <strong>时区设置：</strong>
+                    <strong>　任务时区设置：</strong>
                     <select name="TimeZone">
-                      <option value="UTC">UTC标准时</option>
-                      <option value="Asia/Shanghai">上海时间</option>
-                      <option value="America/New_York">纽约时间</option>
-                    </select><br>
-                    &nbsp;
+                        <%include file="TimeZone.html"/>
+                    </select>
+                    <br>&nbsp;
+
 <%
     if NameRule == 'auto':
         text_a = 'selected="selected"'
@@ -315,8 +314,8 @@
                     <select name="NameRule">
                       <option value="auto" ${text_a}>根据下载链接</option>
                       <option value="rule" ${text_b}>根据规则名称</option>
-                    </select><br>
-                    &nbsp;
+                    </select>
+                    <br>&nbsp;
 <%
     if Downloader == 'aria2':
         text_a = 'selected="selected"'
@@ -337,21 +336,21 @@
                         <option value="wget" ${text_b}>Wget下载器</option>
                         <option value="python" ${text_c}>Python下载器</option>
                     </select>
-                    &nbsp;
-                    <strong>持续时间：</strong>
+                    <strong>　持续时间：</strong>
                     <input type="text" size="4" name="TaskTime" value="12">小时
-                    <br>
-                    &nbsp;
+                    <br>&nbsp;
                     <strong>检测完成方式：</strong>
                     <select name="CheckType" id="CheckType">
                         <option value="auto" selected="selected">自动检测图片</option>
                         <option value="size" id="ByFileSize">根据文件大小</option>
                         <option value="none">完成后不检查</option>
                     </select>
-                    &nbsp;
-                    <strong class="InputFileSize">最小体积：</strong>
+                    <strong class="InputFileSize">　最小体积：</strong>
                     <input type="text" size="4" name="CheckSize" value="4096" class="InputFileSize">
                     <strong class="InputFileSize">Bytes</strong>
+                    <br>&nbsp;
+                    <strong>格式化字符串：</strong>
+                    <input type="text" name="FormatStr" value="%02d" size="6"/>
                 </td>
             </tr>
         </table>

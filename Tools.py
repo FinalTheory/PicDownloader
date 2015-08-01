@@ -8,6 +8,7 @@ import sqlite3
 import socket
 import sys
 import web
+
 web.config.debug = False
 import os
 from threading import Lock
@@ -19,13 +20,21 @@ def check_path(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def get_dir_size(dir_path):
-   size = 0
-   nums = 0
-   for root, dirs, files in os.walk(dir_path):
-       size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
-       nums += len(files)
-   return size, nums
+
+def get_sorted_file_list(dir_path):
+    size = 0
+    nums = 0
+    all_info = []
+    for root, dirs, files in os.walk(dir_path):
+        for name in files:
+            file_name = os.path.join(root, name)
+            file_size = os.path.getsize(file_name)
+            file_mtime = os.path.getmtime(file_name)
+            size += file_size
+            nums += 1
+            all_info.append((file_name, file_size, file_mtime))
+    return size, nums, sorted(all_info, key=lambda x: x[2])
+
 
 def check_port(port, ip='127.0.0.1', timeout=0.1):
     port = int(port)
@@ -39,6 +48,7 @@ def check_port(port, ip='127.0.0.1', timeout=0.1):
     sk.close()
     return result
 
+
 def check_connect():
     address = cfg.read('check_server_ip')
     port = int(cfg.read('check_server_port'))
@@ -47,10 +57,10 @@ def check_connect():
         return True
     return False
 
+
 # 下面是数据库处理类和配置文件处理类
 
 class DataBaseManager():
-
     def __init__(self):
         # Try to open database file, if failed then create a new one
         try:
@@ -63,8 +73,8 @@ class DataBaseManager():
     # Method to create a entire new database
     def InitDataBase(self):
         open(cfg.read('db_filename'), 'w').close()
-        with open(cfg.read('sql_filename')) as fid,\
-            sqlite3.connect(cfg.read('db_filename')) as conn:
+        with open(cfg.read('sql_filename')) as fid, \
+                sqlite3.connect(cfg.read('db_filename')) as conn:
             conn.text_factory = str
             for sql in fid.read().split('\n\n'):
                 if len(sql) > 3:

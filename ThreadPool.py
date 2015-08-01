@@ -25,13 +25,14 @@ class BasicDownloader:
                  check_type,
                  check_size,
                  is_debug):
-        sql = "UPDATE `CurrentTask` SET `Status` = 2 WHERE `TaskID` = %d" % TaskID
+        # 使用URL作为天然的唯一标识符
+        sql = "UPDATE `CurrentTask` SET `Status` = 2 WHERE `URL` = '%s'" % URL
         db.Execute(sql)
         self.download(URL, Location, is_debug)
         status = self.check_if_success(Location, check_type, check_size, is_debug)
         if status:
             # 若下载成功，则从未完成列表中删除
-            sql = "DELETE FROM `CurrentTask` WHERE `TaskID` = %d" % TaskID
+            sql = "DELETE FROM `CurrentTask` WHERE `URL` = '%s'" % URL
             log.log_message(u'[INFO] Task %d downloaded successfully to %s at %s'
                             % (TaskID, Location, datetime.now().ctime()))
         else:
@@ -40,7 +41,7 @@ class BasicDownloader:
                 os.remove(Location)
             # 然后将其下载次数+1以降低优先级，并且恢复正常状态
             sql = "UPDATE `CurrentTask` SET `RepeatTimes` = `RepeatTimes` + 1, " \
-                  "`Status` = 1 WHERE `TaskID` = %d" % TaskID
+                  "`Status` = 1 WHERE `URL` = '%s'" % URL
             log.log_message(u'[INFO] Task %d download to %s failed at %s'
                             % (TaskID, Location, datetime.now().ctime()))
         db.Execute(sql)

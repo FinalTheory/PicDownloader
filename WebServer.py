@@ -539,6 +539,7 @@ class Faq():
     def GET(self):
         web.seeother('https://github.com/FinalTheory/PicDownloader')
 
+
 def start_web_server():
     app = web.application(urls, globals())
     sys.stderr.write('Web server started at %d port!\n' % int(cfg.read('port_name')))

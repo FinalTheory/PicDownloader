@@ -17,7 +17,7 @@ def copy_dir(base_dir):
 
 
 data_files = [
-    ("Microsoft.VC120.CRT", glob(r'C:\VS2013\VC\redist\x64\Microsoft.VC120.CRT\*.*')),
+    ("Microsoft.VC140.CRT", glob(r'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\redist\x64\Microsoft.VC140.CRT\*.*')),
     ("", ['config.ini', 'InitDataBase.sql', 'wget.exe', 'aria2c.exe']),
     ("", [certifi.where()])
 ]

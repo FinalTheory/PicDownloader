@@ -36,17 +36,25 @@ def get_sorted_file_list(dir_path):
     return size, nums, sorted(all_info, key=lambda x: x[2])
 
 
+def ip_check(ip):
+    q = ip.split('.')
+    return len(q) == 4 and len(filter(lambda x: 0 <= x <= 255,
+                                      map(int, filter(lambda x: x.isdigit(), q)))) == 4
+
+
 def check_port(port, ip='127.0.0.1', timeout=0.1):
-    port = int(port)
-    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sk.settimeout(timeout)
-    result = True
     try:
+        port = int(port)
+        # 确保传入的ip地址是合法的，否则进行域名查询
+        if not ip_check(ip):
+            ip, port = socket.getaddrinfo(ip, port)[0][4]
+        sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sk.settimeout(timeout)
         sk.connect((ip, port))
+        sk.close()
+        return True
     except Exception:
-        result = False
-    sk.close()
-    return result
+        return False
 
 
 def check_connect():
@@ -109,7 +117,7 @@ class ConfigLoader():
             open(cfg_name, 'r').close()
         except:
             sys.stderr.write(u'严重错误，无法读取配置文件！程序自动退出。\n')
-            exit(-1)
+            sys.exit(-1)
         self.config = ConfigParser()
         self.config.read(cfg_name)
         self.system = dict(self.config.items('system'))
@@ -125,11 +133,11 @@ class ConfigLoader():
                 os.mkdir(root_path)
         except Exception, err:
             sys.stderr.write(u'系统错误，原因：%s\n' % err)
-            exit(-1)
+            sys.exit(-1)
         # 接下来检查端口是否可用
         if check_port(self.read('port_name')):
             sys.stderr.write(u'系统错误，端口被占用！\n')
-            exit(-1)
+            sys.exit(-1)
 
     def read(self, key):
         result = self.system.get(key)
